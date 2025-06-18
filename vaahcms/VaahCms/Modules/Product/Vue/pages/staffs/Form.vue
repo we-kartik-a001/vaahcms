@@ -1,13 +1,13 @@
 <script setup>
 import {onMounted, ref, watch} from "vue";
 import { useRootStore } from '@/stores/root'
-import { useEmployeeStore } from '@/stores/store-employees'
+import { useStaffStore } from '@/stores/store-staffs'
 
 import {useRoute} from 'vue-router';
 
 
 const root = useRootStore();
-const store = useEmployeeStore();
+const store = useStaffStore();
 const route = useRoute();
 
 onMounted(async () => {
@@ -62,14 +62,14 @@ const toggleFormMenu = (event) => {
                 <Button class="p-button-sm"
                         v-tooltip.left="'View'"
                         v-if="store.item && store.item.id"
-                        data-testid="employees-view_item"
+                        data-testid="staffs-view_item"
                         @click="store.toView(store.item)"
                         icon="pi pi-eye"/>
 
                 <Button label="Save"
                         class="p-button-sm"
                         v-if="store.item && store.item.id"
-                        data-testid="employees-save"
+                        data-testid="staffs-save"
                         @click="store.itemAction('save')"
                         icon="pi pi-save"/>
 
@@ -77,7 +77,7 @@ const toggleFormMenu = (event) => {
                         v-else
                         @click="store.itemAction('create-and-new')"
                         class="p-button-sm"
-                        data-testid="employees-create-and-new"
+                        data-testid="staffs-create-and-new"
                         icon="pi pi-save"/>
 
 
@@ -86,7 +86,7 @@ const toggleFormMenu = (event) => {
                         type="button"
                         @click="toggleFormMenu"
                         class="p-button-sm"
-                        data-testid="employees-form-menu"
+                        data-testid="staffs-form-menu"
                         icon="pi pi-angle-down"
                         aria-haspopup="true"/>
 
@@ -98,7 +98,7 @@ const toggleFormMenu = (event) => {
 
                 <Button class="p-button-primary p-button-sm"
                         icon="pi pi-times"
-                        data-testid="employees-to-list"
+                        data-testid="staffs-to-list"
                         @click="store.toList()">
                 </Button>
             </div>
@@ -125,7 +125,7 @@ const toggleFormMenu = (event) => {
                     <div class="ml-3">
                         <Button label="Restore"
                                 class="p-button-sm"
-                                data-testid="employees-item-restore"
+                                data-testid="staffs-item-restore"
                                 @click="store.itemAction('restore')">
                         </Button>
                     </div>
@@ -135,37 +135,47 @@ const toggleFormMenu = (event) => {
             </Message>
 
 
-            <FloatLabel class="my-3" :variant="store.float_label_variants">
+           <!-- Form Field: Start  -->
+             <FloatLabel class="my-3" :variant="store.float_label_variants">
                 <InputText class="w-full"
-                           name="employees-name"
-                           data-testid="employees-name"
-                           id="employees-name"
+                           name="staffs-name"
+                           data-testid="staffs-name"
+                           id="staffs-name"
                            @update:modelValue="store.watchItem"
                            v-model="store.item.name" required/>
-                <label for="employees-name">Enter the name</label>
+                <label for="staffs-name">Enter the name</label>
             </FloatLabel>
 
 
             <FloatLabel class="my-3" :variant="store.float_label_variants">
                 <InputText class="w-full"
-                           name="employees-slug"
-                           data-testid="employees-slug"
-                           id="employees-slug"
-                           v-model="store.item.slug" required/>
-                <label for="employees-slug">Enter the slug</label>
+                           name="staffs-department"
+                           data-testid="staffs-department"
+                           id="staffs-department"
+                           v-model="store.item.department" required/>
+                <label for="staffs-department">Enter the department</label>
             </FloatLabel>
 
+            <FloatLabel class="my-3" :variant="store.float_label_variants">
+                <InputText class="w-full"
+                           name="staffs-slug"
+                           data-testid="staffs-slug"
+                           id="staffs-slug"
+                           v-model="store.item.slug" required/>
+                <label for="staffs-slug">Enter the slug</label>
+            </FloatLabel>
+           <!-- Form Field: End -->
 
             <div class="flex items-center gap-2 my-3" >
                 <ToggleSwitch v-bind:false-value="0"
                               v-bind:true-value="1"
                               size="small"
-                              name="employees-active"
-                              data-testid="employees-active"
-                              inputId="employees-active"
+                              name="staffs-active"
+                              data-testid="staffs-active"
+                              inputId="staffs-active"
                               v-model="store.item.is_active"/>
 
-                <label for="employees-active">Remember Me</label>
+                <label for="staffs-active">Is Active</label>
             </div>
 
 

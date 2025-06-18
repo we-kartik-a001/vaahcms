@@ -44,6 +44,10 @@ import Checkbox from "primevue/checkbox";
 import ConfirmPopup from "primevue/confirmpopup";
 import ToggleButton from "primevue/togglebutton";
 
+import Dropdown from 'primevue/dropdown';
+
+
+
 //-------------/CRUD PrimeVue Imports
 
 
@@ -115,6 +119,7 @@ app.component('ToggleButton', ToggleButton);
 app.component('Menubar', Menubar);
 app.component('Select', Select);
 app.component('InputNumber', InputNumber);
+app.component('Dropdown', Dropdown);
 
 //-------------/CRUD PrimeVue Use
 

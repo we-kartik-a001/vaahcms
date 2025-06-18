@@ -25,6 +25,16 @@ const items = ref([
         icon: 'pi pi-home',
         route: "/items"
       },
+      {
+        label: 'Staffs',
+        icon: 'pi pi-home',
+        route: "/staffs"
+      },
+      {
+        label: 'Employees',
+        icon: 'pi pi-home',
+        route: "/employees"
+      },
     ]
   },
 ]);

@@ -1,27 +1,39 @@
 <script setup>
-import {onMounted, ref, watch} from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRootStore } from '@/stores/root'
 import { useItemStore } from '@/stores/store-items'
-
-import {useRoute} from 'vue-router';
+import { useRoute } from 'vue-router';
+import axios from 'axios';
+import Select from 'primevue/select';
 
 
 const root = useRootStore();
 const store = useItemStore();
 const route = useRoute();
 
-onMounted(async () => {
-    /**
-     * Fetch the record from the database
-     */
-    if((!store.item || Object.keys(store.item).length < 1)
-            && route.params && route.params.id)
-    {
-        await store.getItem(route.params.id);
-    }
 
-    await store.getFormMenu();
+const brands = ref([]);
+
+onMounted(async () => {
+    try {
+        if ((!store.item || Object.keys(store.item).length < 1)
+            && route.params && route.params.id) {
+            await store.getItem(route.params.id);
+        }
+
+        await store.getFormMenu();
+
+        const res = await axios.get('/backend/product/items/get-brand-list');
+        brands.value = res.data.data; 
+
+        console.log(brands);
+
+    } catch (error) {
+        console.error("Error in onMounted:", error);
+    }
 });
+
+
 
 //--------form_menu
 const form_menu = ref();
@@ -41,12 +53,12 @@ const toggleFormMenu = (event) => {
 
             <div class="flex flex-row">
                 <div class="p-panel-title">
-                        <span v-if="store.item && store.item.id">
-                            Update
-                        </span>
+                    <span v-if="store.item && store.item.id">
+                        Update
+                    </span>
                     <span v-else>
-                            Create
-                        </span>
+                        Create
+                    </span>
                 </div>
 
             </div>
@@ -59,47 +71,26 @@ const toggleFormMenu = (event) => {
 
             <div class="p-inputgroup">
 
-                <Button class="p-button-sm"
-                        v-tooltip.left="'View'"
-                        v-if="store.item && store.item.id"
-                        data-testid="items-view_item"
-                        @click="store.toView(store.item)"
-                        icon="pi pi-eye"/>
+                <Button class="p-button-sm" v-tooltip.left="'View'" v-if="store.item && store.item.id"
+                    data-testid="items-view_item" @click="store.toView(store.item)" icon="pi pi-eye" />
 
-                <Button label="Save"
-                        class="p-button-sm"
-                        v-if="store.item && store.item.id"
-                        data-testid="items-save"
-                        @click="store.itemAction('save')"
-                        icon="pi pi-save"/>
+                <Button label="Save" class="p-button-sm" v-if="store.item && store.item.id" data-testid="items-save"
+                    @click="store.itemAction('save')" icon="pi pi-save" />
 
-                <Button label="Create & New"
-                        v-else
-                        @click="store.itemAction('create-and-new')"
-                        class="p-button-sm"
-                        data-testid="items-create-and-new"
-                        icon="pi pi-save"/>
+                <Button label="Create & New" v-else @click="store.itemAction('create-and-new')" class="p-button-sm"
+                    data-testid="items-create-and-new" icon="pi pi-save" />
 
 
                 <!--form_menu-->
-                <Button
-                        type="button"
-                        @click="toggleFormMenu"
-                        class="p-button-sm"
-                        data-testid="items-form-menu"
-                        icon="pi pi-angle-down"
-                        aria-haspopup="true"/>
+                <Button type="button" @click="toggleFormMenu" class="p-button-sm" data-testid="items-form-menu"
+                    icon="pi pi-angle-down" aria-haspopup="true" />
 
-                <Menu ref="form_menu"
-                      :model="store.form_menu_list"
-                      :popup="true" />
+                <Menu ref="form_menu" :model="store.form_menu_list" :popup="true" />
                 <!--/form_menu-->
 
 
-                <Button class="p-button-primary p-button-sm"
-                        icon="pi pi-times"
-                        data-testid="items-to-list"
-                        @click="store.toList()">
+                <Button class="p-button-primary p-button-sm" icon="pi pi-times" data-testid="items-to-list"
+                    @click="store.toList()">
                 </Button>
             </div>
 
@@ -110,23 +101,18 @@ const toggleFormMenu = (event) => {
 
         <div v-if="store.item" class="mt-2">
 
-            <Message severity="error"
-                     class="p-container-message mb-3"
-                     :closable="false"
-                     icon="pi pi-trash"
-                     v-if="store.item.deleted_at">
+            <Message severity="error" class="p-container-message mb-3" :closable="false" icon="pi pi-trash"
+                v-if="store.item.deleted_at">
 
                 <div class="flex align-items-center justify-content-between">
 
                     <div class="">
-                        Deleted {{store.item.deleted_at}}
+                        Deleted {{ store.item.deleted_at }}
                     </div>
 
                     <div class="ml-3">
-                        <Button label="Restore"
-                                class="p-button-sm"
-                                data-testid="items-item-restore"
-                                @click="store.itemAction('restore')">
+                        <Button label="Restore" class="p-button-sm" data-testid="items-item-restore"
+                            @click="store.itemAction('restore')">
                         </Button>
                     </div>
 
@@ -136,38 +122,35 @@ const toggleFormMenu = (event) => {
 
 
             <FloatLabel class="my-3" :variant="store.float_label_variants">
-                <InputText class="w-full"
-                           name="items-name"
-                           data-testid="items-name"
-                           id="items-name"
-                           @update:modelValue="store.watchItem"
-                           v-model="store.item.name" required/>
+                <InputText class="w-full" name="items-name" data-testid="items-name" id="items-name"
+                    @update:modelValue="store.watchItem" v-model="store.item.name" required />
                 <label for="items-name">Enter the name</label>
             </FloatLabel>
 
 
             <FloatLabel class="my-3" :variant="store.float_label_variants">
-                <InputText class="w-full"
-                           name="items-slug"
-                           data-testid="items-slug"
-                           id="items-slug"
-                           v-model="store.item.slug" required/>
+                <InputText class="w-full" name="items-slug" data-testid="items-slug" id="items-slug"
+                    v-model="store.item.slug" required />
                 <label for="items-slug">Enter the slug</label>
             </FloatLabel>
 
+            <!-- {{ store.assets.brands }} -->
 
-            <div class="flex items-center gap-2 my-3" >
-                <ToggleSwitch v-bind:false-value="0"
-                              v-bind:true-value="1"
-                              size="small"
-                              name="items-active"
-                              data-testid="items-active"
-                              inputId="items-active"
-                              v-model="store.item.is_active"/>
+            <FloatLabel class="my-3" :variant="store.float_label_variants">
+                 <Dropdown v-model="store.item.brand_id"
+                  :options="store.assets.brands"
+                  optionLabel="name"
+                  optionValue="id"
+                   placeholder="Select a brand" 
+                   checkmark :highlightOnSelect="false" class="w-full md:w-14rem" />
+            </FloatLabel>
+             
+            <div class="flex items-center gap-2 my-3">
+                <ToggleSwitch v-bind:false-value="0" v-bind:true-value="1" size="small" name="items-active"
+                    data-testid="items-active" inputId="items-active" v-model="store.item.is_active" />
 
                 <label for="items-active">Is Active</label>
             </div>
-
 
         </div>
     </Panel>

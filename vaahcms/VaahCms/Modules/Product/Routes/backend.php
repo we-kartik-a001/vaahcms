@@ -33,3 +33,5 @@ Route::group(
  */
 include("backend/routes-brands.php");
 include("backend/routes-items.php");
+include("backend/routes-staffs.php");
+include("backend/routes-employees.php");

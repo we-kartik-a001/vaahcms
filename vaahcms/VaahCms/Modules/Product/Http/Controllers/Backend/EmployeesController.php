@@ -2,11 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use VaahCms\Modules\Product\Models\Brand;
-use VaahCms\Modules\Product\Models\Item;
+use VaahCms\Modules\Product\Models\Employee;
+use VaahCms\Modules\Product\Models\Staff;
 
-
-class ItemsController extends Controller
+class EmployeesController extends Controller
 {
 
 
@@ -28,10 +27,10 @@ class ItemsController extends Controller
             $data['permission'] = [];
             $data['rows'] = config('vaahcms.per_page');
 
-            $data['fillable']['columns'] = Item::getFillableColumns();
-            $data['fillable']['except'] = Item::getUnFillableColumns();
-            $data['empty_item'] = Item::getEmptyItem();
-            $data['brands'] = Brand::all();
+            $data['fillable']['columns'] = Employee::getFillableColumns();
+            $data['fillable']['except'] = Employee::getUnFillableColumns();
+            $data['empty_item'] = Employee::getEmptyItem();
+            $data['department_id'] = Staff::all();
 
             $data['actions'] = [];
 
@@ -56,7 +55,7 @@ class ItemsController extends Controller
     public function getList(Request $request)
     {
         try{
-            return Item::getList($request);
+            return Employee::getList($request);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -73,7 +72,7 @@ class ItemsController extends Controller
     public function updateList(Request $request)
     {
         try{
-            return Item::updateList($request);
+            return Employee::updateList($request);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -93,7 +92,7 @@ class ItemsController extends Controller
 
 
         try{
-            return Item::listAction($request, $type);
+            return Employee::listAction($request, $type);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -111,7 +110,7 @@ class ItemsController extends Controller
     public function deleteList(Request $request)
     {
         try{
-            return Item::deleteList($request);
+            return Employee::deleteList($request);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -128,7 +127,7 @@ class ItemsController extends Controller
     public function fillItem(Request $request)
     {
         try{
-            return Item::fillItem($request);
+            return Employee::fillItem($request);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -145,7 +144,7 @@ class ItemsController extends Controller
     public function createItem(Request $request)
     {
         try{
-            return Item::createItem($request);
+            return Employee::createItem($request);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -162,7 +161,7 @@ class ItemsController extends Controller
     public function getItem(Request $request, $id)
     {
         try{
-            return Item::getItem($id);
+            return Employee::getItem($id);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -179,7 +178,7 @@ class ItemsController extends Controller
     public function updateItem(Request $request,$id)
     {
         try{
-            return Item::updateItem($request,$id);
+            return Employee::updateItem($request,$id);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -196,7 +195,7 @@ class ItemsController extends Controller
     public function deleteItem(Request $request,$id)
     {
         try{
-            return Item::deleteItem($request,$id);
+            return Employee::deleteItem($request,$id);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
@@ -213,7 +212,7 @@ class ItemsController extends Controller
     public function itemAction(Request $request,$id,$action)
     {
         try{
-            return Item::itemAction($request,$id,$action);
+            return Employee::itemAction($request,$id,$action);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;

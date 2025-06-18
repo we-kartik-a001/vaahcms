@@ -145,6 +145,17 @@ const toggleFormMenu = (event) => {
                 <label for="employees-name">Enter the name</label>
             </FloatLabel>
 
+             <!-- {{ store.assets.department_id }} -->
+             <!-- {{typeof(store.item.department_id) }} -->
+
+            <FloatLabel class="my-3" :variant="store.integer_label_variants">
+                 <Dropdown v-model="store.item.department_id"
+                  :options="store.assets.department_id"
+                  optionLabel="department"
+                  optionValue="id"
+                   placeholder="Select a Department" 
+                   checkmark :highlightOnSelect="false" class="w-full md:w-14rem" />
+            </FloatLabel>
 
             <FloatLabel class="my-3" :variant="store.float_label_variants">
                 <InputText class="w-full"
@@ -165,7 +176,7 @@ const toggleFormMenu = (event) => {
                               inputId="employees-active"
                               v-model="store.item.is_active"/>
 
-                <label for="employees-active">Remember Me</label>
+                <label for="employees-active">Is Active</label>
             </div>
 
 

@@ -10,14 +10,14 @@ use WebReinvent\VaahCms\Traits\CrudWithUuidObservantTrait;
 use WebReinvent\VaahCms\Models\User;
 use WebReinvent\VaahCms\Libraries\VaahSeeder;
 
-class Item extends VaahModel
+class Employee extends VaahModel
 {
 
     use SoftDeletes;
     use CrudWithUuidObservantTrait;
 
     //-------------------------------------------------
-    protected $table = 'items';
+    protected $table = 'employees';
     //-------------------------------------------------
     protected $dates = [
         'created_at',
@@ -28,8 +28,8 @@ class Item extends VaahModel
     protected $fillable = [
         'uuid',
         'name',
+        'department_id',
         'slug',
-        'brand_id',
         'is_active',
         'created_by',
         'updated_by',
@@ -97,6 +97,10 @@ class Item extends VaahModel
         )->select('id', 'uuid', 'first_name', 'last_name', 'email');
     }
 
+    //-------------------------------------------------
+    public function staff(){
+        return $this->belongsTo(Staff::class,'department_id','id');
+    }
     //-------------------------------------------------
     public function updatedByUser()
     {
@@ -277,6 +281,7 @@ class Item extends VaahModel
         $list->isActiveFilter($request->filter);
         $list->trashedFilter($request->filter);
         $list->searchFilter($request->filter);
+        $list->with(['staff']);
 
         $rows = config('vaahcms.per_page');
 
@@ -642,11 +647,9 @@ class Item extends VaahModel
     }
 
     //-------------------------------------------------
+  
     //-------------------------------------------------
     //-------------------------------------------------
 
-    public function brand()
-    {
-        return $this->belongsTo(Brand::class);
-    }
+
 }
