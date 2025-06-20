@@ -20,8 +20,12 @@ class Person extends Migration
                 $table->uuid('uuid')->nullable()->index();
 
                 $table->string('name')->nullable()->index();
+                $table->string('email')->nullable()->index();
+                $table->integer('quantity')->nullable()->index();;
+                $table->decimal('total_amount', 10, 2)->nullable()->index();; 
                 $table->string('status')->default('Pending')->nullable()->index();
                 $table->string('slug')->nullable()->index();
+                
                 $table->boolean('is_active')->nullable()->index();
 
 

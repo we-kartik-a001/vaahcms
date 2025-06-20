@@ -134,7 +134,6 @@ const toggleFormMenu = (event) => {
 
             </Message>
 
-
             <FloatLabel class="my-3" :variant="store.float_label_variants">
                 <InputText class="w-full"
                            name="products-name"
@@ -143,6 +142,33 @@ const toggleFormMenu = (event) => {
                            @update:modelValue="store.watchItem"
                            v-model="store.item.name" required/>
                 <label for="products-name">Enter the name</label>
+            </FloatLabel>
+
+            <FloatLabel class="my-3" :variant="store.float_label_variants">
+                <InputText class="w-full"
+                           name="products-description"
+                           data-testid="products-description"
+                           id="products-description"
+                           v-model="store.item.description" required/>
+                <label for="products-description">Enter the description</label>
+            </FloatLabel>
+
+            <FloatLabel class="my-3" :variant="store.float_label_variants">
+                <InputText class="w-full"
+                           name="products-price"
+                           data-testid="products-price"
+                           id="products-price"
+                           v-model="store.item.price" required/>
+                <label for="products-price">Enter the price</label>
+            </FloatLabel>
+
+             <FloatLabel class="my-3" :variant="store.float_label_variants">
+                <InputText class="w-full"
+                           name="products-stock"
+                           data-testid="products-stock"
+                           id="products-stock"
+                           v-model="store.item.stock" required/>
+                <label for="products-stock">Enter the stock</label>
             </FloatLabel>
 
 

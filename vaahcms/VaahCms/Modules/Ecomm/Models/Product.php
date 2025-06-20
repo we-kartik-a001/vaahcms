@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Faker\Factory;
+use Personorders;
 use WebReinvent\VaahCms\Models\VaahModel;
 use WebReinvent\VaahCms\Traits\CrudWithUuidObservantTrait;
 use WebReinvent\VaahCms\Models\User;
@@ -28,6 +29,9 @@ class Product extends VaahModel
     protected $fillable = [
         'uuid',
         'name',
+        'description',
+        'stock',
+        'price',
         'slug',
         'is_active',
         'created_by',
@@ -42,6 +46,15 @@ class Product extends VaahModel
     //-------------------------------------------------
     protected $appends = [
     ];
+
+    //-------------------------------------------------
+    /**
+     * Relationships
+     */
+    public function person()
+    {
+        return $this->belongsToMany(person::class, 'orderproduct','product_id','person_id')->withTimestamps();
+    }
 
     //-------------------------------------------------
     protected function serializeDate(DateTimeInterface $date)

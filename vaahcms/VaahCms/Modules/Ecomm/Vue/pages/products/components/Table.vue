@@ -28,6 +28,7 @@ const useVaah = vaah();
             <Column field="id" header="ID" :style="{width: '80px'}" :sortable="true">
             </Column>
 
+            <!-- Form Fields:Start -->
             <Column field="name" header="Name"
                     class="overflow-wrap-anywhere"
                     :sortable="true">
@@ -41,6 +42,45 @@ const useVaah = vaah();
 
             </Column>
 
+            <Column field="description" header="Description"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.description}}
+                </template>
+
+            </Column>
+
+            <Column field="price" header="Price"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.price}}
+                </template>
+
+            </Column>
+
+              <Column field="stock" header="Stock"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.stock}}
+                </template>
+
+            </Column>
+             <!-- Form Fields:End -->
 
             <Column field="updated_at" header="Updated"
                     v-if="store.isListView() && !store.isMobile"

@@ -43,7 +43,15 @@ class Person extends VaahModel
     //-------------------------------------------------
     protected $appends = [
     ];
-
+    //-------------------------------------------------
+     /**
+     * Relationships
+     */
+    public function person()
+    {
+        return $this->belongsToMany(Product::class, 'orderproduct','person_id','product_id')->withTimestamps();
+    }
+   
     //-------------------------------------------------
     protected function serializeDate(DateTimeInterface $date)
     {
@@ -149,7 +157,6 @@ class Person extends VaahModel
     //-------------------------------------------------
     public static function createItem($request)
     {
-dd($request);
         $inputs = $request->all();
 
         $validation = self::validation($inputs);
@@ -177,7 +184,7 @@ dd($request);
             $response['errors'][] = $error_message;
             return $response;
         }
-// dd($request->status['name']);
+
         $item = new self();
         $item->fill($inputs);
         $item->status=$request->status['name'];

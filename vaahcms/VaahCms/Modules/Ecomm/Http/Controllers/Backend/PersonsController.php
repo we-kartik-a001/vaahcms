@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use VaahCms\Modules\Ecomm\Models\Person;
+use VaahCms\Modules\Ecomm\Models\Product;
 use WebReinvent\VaahCms\Models\Taxonomy;
 
 class PersonsController extends Controller
@@ -32,6 +33,8 @@ class PersonsController extends Controller
             $data['fillable']['except'] = Person::getUnFillableColumns();
             $data['empty_item'] = Person::getEmptyItem();
             $data['order_status'] = Taxonomy::getTaxonomyByType($type);
+
+            $data['products'] = Product::all();//products data
 
             $data['actions'] = [];
 

@@ -2,22 +2,30 @@
 import { onMounted, ref, watch } from "vue";
 import { useRootStore } from '@/stores/root'
 import { usePersonStore } from '@/stores/store-persons'
-
 import { useRoute } from 'vue-router';
-
-// const selectedStatus = ref(); 
-// Bound value for status selection
-
-// const statuses = ref([
-//     { name: 'Pending', code: 'Pending' },
-//     { name: 'Active', code: 'Active' },
-//     { name: 'Inactive', code: 'Inactive' },
-//     { name: 'Delivered', code: 'Delivered' }
-// ]);
+import InputNumber from 'primevue/inputnumber';
 
 
 const root = useRootStore();
 const store = usePersonStore();
+const selectedProductIds = ref([]);
+const productsWithQty = ref([]);
+
+// Sync selectedProductIds with productsWithQty
+watch(selectedProductIds, (newIds) => {
+    newIds.forEach(id => {
+        if (!productsWithQty.value.find(p => p.id === id)) {
+            productsWithQty.value.push({ id, qty: 1 });
+        }
+    });
+    productsWithQty.value = productsWithQty.value.filter(p => newIds.includes(p.id));
+}, { immediate: true });
+
+// Sync productsWithQty to store.item.products for backend
+watch(productsWithQty, (val) => {
+    store.item.products = val;
+}, { immediate: true, deep: true });
+
 
 onMounted(async () => {
     /**
@@ -117,6 +125,7 @@ const toggleFormMenu = (event) => {
             </Message>
 
 
+            <!-- Form Input Field:Start -->
             <FloatLabel class="my-3" :variant="store.float_label_variants">
                 <InputText class="w-full" name="persons-name" data-testid="persons-name" id="persons-name"
                     @update:modelValue="store.watchItem" v-model="store.item.name" required />
@@ -130,11 +139,81 @@ const toggleFormMenu = (event) => {
                 <label for="persons-slug">Enter the slug</label>
             </FloatLabel>
 
-
             <FloatLabel class="my-3" :variant="store.float_label_variants">
-                <Dropdown v-model="store.item.status" :options="store.assets.order_status" optionLabel="name" optionValue="id" 
-                    placeholder="Select Status" class="w-full md:w-14rem" />
+                <InputText class="w-full" name="persons-email" data-testid="persons-email" id="persons-email"
+                    v-model="store.item.email" required />
+                <label for="persons-email">Enter the Email</label>
             </FloatLabel>
+
+            <!-- v-model="store.item.status" -->
+            <div class="flex justify-between gap-2">
+                <FloatLabel class="my-3" :variant="store.float_label_variants">
+                    <MultiSelect v-model="selectedProductIds" :options="store.assets.products" optionLabel="name"
+                        optionValue="id" placeholder="Select Products" class="w-full md:w-19rem" />
+                </FloatLabel>
+
+                <FloatLabel class="my-3" :variant="store.float_label_variants">
+                    <Dropdown v-model="store.item.status" :options="store.assets.order_status" optionLabel="name"
+                        optionValue="id" placeholder="Select Status" class="w-full md:w-19rem" />
+                </FloatLabel>
+            </div>
+
+            <!-- <div class="flex flex-wrap gap-2 my-2 ">
+                <span v-for="id in store.item.products" :key="id" class="p-tag rounded-md m-1 p-tag-info">
+                    {{store.assets.products.find(p => p.id === id)?.name || id}}
+                    <span v-if="store.assets.products.find(p => p.id === id)">
+                        (Stock: {{store.assets.products.find(p => p.id === id).stock}})
+                    </span>
+                </span>
+            </div> -->
+           <FloatLabel class="my-3" :variant="store.float_label_variants">
+    <div class="flex flex-wrap gap-4 my-4">
+        <span v-for="prod in productsWithQty" :key="prod.id"
+            class="flex flex-col p-4 bg-blue-50 rounded-xl shadow-sm border border-blue-200 w-60 space-y-3 transition-transform transform hover:scale-105">
+
+            <!-- Product Name -->
+            <div class="text-base font-semibold text-gray-800">
+                {{ store.assets.products.find(p => p.id === prod.id)?.name || prod.id }}
+            </div>
+
+            <!-- Stock Info -->
+            <div v-if="store.assets.products.find(p => p.id === prod.id)" class="text-sm text-gray-500">
+                Stock: {{ store.assets.products.find(p => p.id === prod.id).stock }}
+            </div>
+
+            <!-- Quantity Input + Add Button -->
+            <div class="flex items-center space-x-3">
+                <InputNumber
+                    v-model="prod.qty"
+                    :min="1"
+                    :max="store.assets.products.find(p => p.id === prod.id)?.stock || 1"
+                    showButtons
+                    buttonLayout="vertical"
+                    style="width: 3rem"
+                    :inputStyle="{ width: '3rem' }"
+                >
+                    <template #incrementbuttonicon>
+                        <span class="pi pi-plus text-green-600" />
+                    </template>
+                    <template #decrementbuttonicon>
+                        <span class="pi pi-minus text-red-600" />
+                    </template>
+                </InputNumber>
+
+                <Button 
+                    icon="pi pi-check" 
+                    class="p-button-sm p-button-success shadow-md hover:shadow-lg transition duration-300" 
+                    @click="confirmQty(prod)"
+                    :disabled="prod.qty < 1 || prod.qty > (store.assets.products.find(p => p.id === prod.id)?.stock || 1)"
+                    label="Add" 
+                />
+            </div>
+        </span>
+    </div>
+</FloatLabel>
+
+            <!-- Form Input Field:End -->
+
 
 
             <div class="flex items-center gap-2 my-3">
