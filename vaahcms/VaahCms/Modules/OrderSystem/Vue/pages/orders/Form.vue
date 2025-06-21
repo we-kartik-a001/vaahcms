@@ -48,8 +48,20 @@ watch(selectedProductIds, (newIds) => {
 
 // Keep store.item.product_ids in sync with selectedProductIds
 watch(productsWithQty, (val) => {
-    store.item.products = val; // <-- yeh line add karein
+    store.item.products = val.map(prod => {
+        const product = store.assets.products.find(p => p.id === prod.id);
+        return {
+            id: prod.id,
+            qty: prod.qty,
+            price: product ? Number(product.price) : 0
+        };
+    });
     store.item.product_ids = val.map(p => p.id);
+    store.item.total_price = val.reduce((sum, prod) => {
+        const product = store.assets.products.find(p => p.id === prod.id);
+        const price = product ? Number(product.price) : 0;
+        return sum + (Number(prod.qty) * price);
+    }, 0);
 }, { immediate: true, deep: true });
 
 // Calculate total price
@@ -163,15 +175,14 @@ const totalQuantity = computed(() => {
                 </VhField>
 
 
-               <VhField label="Products">
+                <VhField label="Products">
                     <MultiSelect v-model="selectedProductIds" :options="store.assets.products" optionLabel="name"
                         optionValue="id" placeholder="Select Products" class="w-full md:w-19rem"
                         data-testid="orders-products" />
                     <div v-if="productsWithQty.length" class="mt-3 space-y-2">
-                        <div v-for="prod in productsWithQty" :key="prod.id"
-                            class="flex items-center gap-4 p-2 rounded">
+                        <div v-for="prod in productsWithQty" :key="prod.id" class="flex items-center gap-4 p-2 rounded">
                             <span class="font-semibold">
-                                {{ store.assets.products.find(p => p.id === prod.id)?.name || prod.id }}
+                                {{store.assets.products.find(p => p.id === prod.id)?.name || prod.id}}
                             </span>
                             <!-- <span class="text-xs text-gray-500">
                                 (Stock: {{ store.assets.products.find(p => p.id === prod.id)?.stock ?? 0 }})
@@ -180,10 +191,12 @@ const totalQuantity = computed(() => {
                                 :max="store.assets.products.find(p => p.id === prod.id)?.stock || 1" showButtons
                                 buttonLayout="horizontal" :inputStyle="{ width: '3rem', textAlign: 'center' }" /> -->
                             <span class="ml-2 text-xs text-gray-700">
-                                {{ store.assets.products.find(p => p.id === prod.id)?.price ?? 0 }}
+                                {{store.assets.products.find(p => p.id === prod.id)?.price ?? 0}}
                             </span>
                             <span class="ml-2 text-xs text-green-700 font-bold">
-                                = ₹{{ (Number(prod.qty) * Number(store.assets.products.find(p => p.id === prod.id)?.price ?? 0)).toFixed(2) }}
+                                = ₹{{(Number(prod.qty) * Number(store.assets.products.find(p => p.id ===
+                                    prod.id)?.price ??
+                                0)).toFixed(2) }}
                             </span>
                         </div>
                         <div class="flex justify-end mt-2 font-bold text-xs">

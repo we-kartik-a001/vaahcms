@@ -41,6 +41,19 @@ const useVaah = vaah();
 
             </Column>
 
+             <Column field="total_price" header="Amount"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"  
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.total_price}}
+                </template>
+
+            </Column>
+
 
                 <Column field="updated_at" header="Updated"
                         v-if="store.isViewLarge()"
@@ -48,7 +61,7 @@ const useVaah = vaah();
                         :sortable="true">
 
                     <template #body="prop">
-                        {prop.data.updated_at}}
+                        {{prop.data.updated_at}}
                     </template>
 
                 </Column>

@@ -82,9 +82,36 @@ class OrderProductsController extends Controller {
 	 * @param  int  $id
 	 * @return Response
 	 */
-	public function update(Request $request, $id)
+	public function update(Request $request)
 	{
-        return response()->json([]);
+		$order_id = $request->order_id;
+		$products = $request->products;
+
+		if(!$order_id || !is_array($products)){
+			return response()->json([
+				'success' => false,
+				'message' => 'Order ID or products data missing.'
+			], 400);
+		}
+
+		// Delete old products for this order
+		DB::table('order_product')->where('order_id', $order_id)->delete();
+
+		// Insert new products
+		foreach($products as $prod){
+			DB::table('order_product')->insert([
+				'order_id' => $order_id,
+				'product_id' => $prod['id'],
+				'quantity' => $prod['qty'],
+				'created_at' => now(),
+				'updated_at' => now(),
+			]);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Order products updated successfully.'
+		]);
 	}
 
 	/**

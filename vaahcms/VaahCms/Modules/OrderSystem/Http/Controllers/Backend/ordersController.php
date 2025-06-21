@@ -3,6 +3,7 @@
 use Customers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use VaahCms\Modules\ordersystem\Http\Controllers\Backend\OrderProductsController;
 use VaahCms\Modules\OrderSystem\Models\customer;
 use VaahCms\Modules\OrderSystem\Models\order;
 use VaahCms\Modules\OrderSystem\Models\Product;
@@ -200,7 +201,30 @@ class ordersController extends Controller
     public function updateItem(Request $request,$id)
     {
         try{
-            return order::updateItem($request,$id);
+        $inputs = $request->all();
+        
+        
+
+        // Extract and unset products
+        $products = isset($inputs['products']) ? $inputs['products'] : [];
+        unset($inputs['products']);
+
+        // Update the order
+        $order = order::findOrFail($id);
+        $order->update($inputs);
+       
+
+        // Call OrderProductsController's update method
+        if (!empty($products)) {
+            //  dd($products);
+            app(OrderProductsController::class)
+                ->update(new Request([
+                    'order_id' => $order->id,
+                    'products' => $products
+                ]));
+        }
+
+        return $order;
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;
