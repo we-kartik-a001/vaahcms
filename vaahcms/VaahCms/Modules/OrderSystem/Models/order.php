@@ -191,9 +191,19 @@ class order extends VaahModel
             return $response;
         }
 
+        $products = isset($inputs['products']) ? $inputs['products'] : [];
+        unset($inputs['products']);
         $item = new self();
         $item->fill($inputs);
+
         $item->save();
+        
+        // Only attach id and quantity (not price)
+        $pivotData = collect($products)->mapWithKeys(function($prod) {
+            return [$prod['id'] => ['quantity' => $prod['quantity']]];
+        })->toArray();
+
+        $item->products()->attach($pivotData);
 
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");
@@ -291,6 +301,7 @@ class order extends VaahModel
         $list->isActiveFilter($request->filter);
         $list->trashedFilter($request->filter);
         $list->searchFilter($request->filter);
+        $list->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer']); 
 
         $rows = config('vaahcms.per_page');
 
@@ -468,7 +479,9 @@ class order extends VaahModel
     {
 
         $item = self::where('id', $id)
-            ->with(['createdByUser', 'updatedByUser', 'deletedByUser'])
+            ->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer',   'products' => function($q) {
+                $q->select('products.id', 'products.name', 'products.price');
+            }])
             ->withTrashed()
             ->first();
 
@@ -478,6 +491,14 @@ class order extends VaahModel
             $response['errors'][] = 'Record not found with ID: '.$id;
             return $response;
         }
+
+        if ($item->products) {
+            $item->products->transform(function($product) {
+                $product->quantity = $product->pivot->quantity;
+                return $product;
+            });
+        }
+
         $response['success'] = true;
         $response['data'] = $item;
 
@@ -506,6 +527,7 @@ class order extends VaahModel
              return $response;
          }
 
+         
          // check if slug exist
          $item = self::where('id', '!=', $id)
              ->withTrashed()
@@ -519,8 +541,19 @@ class order extends VaahModel
          }
 
         $item = self::where('id', $id)->withTrashed()->first();
+
+        $products = isset($inputs['products']) ? $inputs['products'] : [];
+        unset($inputs['products']);
         $item->fill($inputs);
         $item->save();
+
+       $products = isset($inputs['products']) ? $inputs['products'] : [];
+        $pivotData = collect($products)->mapWithKeys(function($prod) {
+            return [$prod['id'] => ['quantity' => $prod['quantity']]];
+        })->toArray();
+
+        // Use sync for update
+        $item->products()->sync($pivotData);
 
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");

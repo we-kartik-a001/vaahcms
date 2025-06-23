@@ -130,8 +130,5 @@ const toggleCreateMenu = (event) => {
          <Filters/>
 
         <RouterView/>
-
     </div>
-
-
 </template>

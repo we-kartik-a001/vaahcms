@@ -148,24 +148,24 @@ class ordersController extends Controller
     public function createItem(Request $request)
     {
         try{
-            $inputs = $request->all();
+            // $inputs = $request->all();
 
             // Products ko alag nikaal lo
-                $products = isset($inputs['products']) ? $inputs['products'] : [];
-                unset($inputs['products']);
+                // $products = isset($inputs['products']) ? $inputs['products'] : [];
+                // unset($inputs['products']);
 
             // Order create karo
-            $order = Order::create($inputs);
+            $order = order::createItem($request);
 
 
             // OrderProductsController ka store method call karo
-            if (!empty($products)) {
-                app(\VaahCms\Modules\ordersystem\Http\Controllers\Backend\OrderProductsController::class)
-                    ->store(new Request([
-                        'order_id' => $order->id,
-                         'products' => $products
-                        ]));
-                }
+            // if (!empty($products)) {
+            //     app(\VaahCms\Modules\ordersystem\Http\Controllers\Backend\OrderProductsController::class)
+            //         ->store(new Request([
+            //             'order_id' => $order->id,
+            //              'products' => $products
+            //             ]));
+            //     }
 
             return  $order;
         }catch (\Exception $e){
@@ -201,30 +201,7 @@ class ordersController extends Controller
     public function updateItem(Request $request,$id)
     {
         try{
-        $inputs = $request->all();
-        
-        
-
-        // Extract and unset products
-        $products = isset($inputs['products']) ? $inputs['products'] : [];
-        unset($inputs['products']);
-
-        // Update the order
-        $order = order::findOrFail($id);
-        $order->update($inputs);
-       
-
-        // Call OrderProductsController's update method
-        if (!empty($products)) {
-            //  dd($products);
-            app(OrderProductsController::class)
-                ->update(new Request([
-                    'order_id' => $order->id,
-                    'products' => $products
-                ]));
-        }
-
-        return $order;
+          return order::updateItem($request,$id);
         }catch (\Exception $e){
             $response = [];
             $response['success'] = false;

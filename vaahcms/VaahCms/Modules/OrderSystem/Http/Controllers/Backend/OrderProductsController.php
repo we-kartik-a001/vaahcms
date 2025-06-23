@@ -45,7 +45,7 @@ class OrderProductsController extends Controller {
 			DB::table('order_product')->insert([
 				'order_id' => $order_id,
 				'product_id' => $prod['id'],
-				'quantity' => $prod['qty'],
+				'quantity' => $prod['quantity'],
 				'created_at' => now(),
 				'updated_at' => now(),
 			]);
@@ -102,7 +102,7 @@ class OrderProductsController extends Controller {
 			DB::table('order_product')->insert([
 				'order_id' => $order_id,
 				'product_id' => $prod['id'],
-				'quantity' => $prod['qty'],
+				'quantity' => $prod['quantity'],
 				'created_at' => now(),
 				'updated_at' => now(),
 			]);

@@ -193,11 +193,11 @@ const totalQuantity = computed(() => {
                             <span class="ml-2 text-xs text-gray-700">
                                 {{store.assets.products.find(p => p.id === prod.id)?.price ?? 0}}
                             </span>
-                            <span class="ml-2 text-xs text-green-700 font-bold">
+                            <!-- <span class="ml-2 text-xs text-green-700 font-bold">
                                 = ₹{{(Number(prod.qty) * Number(store.assets.products.find(p => p.id ===
                                     prod.id)?.price ??
                                 0)).toFixed(2) }}
-                            </span>
+                            </span> -->
                         </div>
                         <div class="flex justify-end mt-2 font-bold text-xs">
                             Total: ₹{{ totalPrice.toFixed(2) }} (Qty: {{ totalQuantity }})
