@@ -54,6 +54,33 @@ const useVaah = vaah();
 
             </Column>
 
+            <Column field="status_id" header="Status"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                    
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"  
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.status_id}}
+                </template>
+
+            </Column>
+
+            <Column field="total_quantity" header="Quantity"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"  
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.total_quantity}}
+                </template>
+
+            </Column>
+
 
                 <Column field="updated_at" header="Updated"
                         v-if="store.isViewLarge()"

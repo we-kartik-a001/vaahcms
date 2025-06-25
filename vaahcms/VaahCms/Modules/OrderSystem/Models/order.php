@@ -5,10 +5,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Faker\Factory;
+use VaahCms\Modules\OrderSystem\Mails\orderstatusMail;
+use WebReinvent\VaahCms\Libraries\VaahMail;
 use WebReinvent\VaahCms\Models\VaahModel;
 use WebReinvent\VaahCms\Traits\CrudWithUuidObservantTrait;
 use WebReinvent\VaahCms\Models\User;
 use WebReinvent\VaahCms\Libraries\VaahSeeder;
+use WebReinvent\VaahCms\Models\Taxonomy;
 
 class order extends VaahModel
 {
@@ -30,6 +33,8 @@ class order extends VaahModel
         'name',
         'customer_id',
         'total_price',
+        'total_quantity',
+        'status_id',
         'slug',
         'is_active',
         'created_by',
@@ -57,6 +62,11 @@ class order extends VaahModel
             ->withTimestamps();
     }
     
+    public function status()
+    {
+        return $this->belongsTo(Taxonomy::class, 'status_id',);
+    }
+
 
     //-------------------------------------------------
     protected function serializeDate(DateTimeInterface $date)
@@ -140,6 +150,186 @@ class order extends VaahModel
         return $query->select(array_diff($this->getTableColumns(), $columns));
     }
 
+    //mail 
+    //----------------
+    public static function orderMail($item)
+    {
+        $subject = 'Order Confirmation';
+
+        // Ensure related models are loaded
+        $item->load('customer', 'products', 'status');
+
+        $customer = $item->customer;
+        $products = $item->products;
+        $statusName = $item->status ? $item->status->name : 'Unknown';
+
+        // Build product table rows
+        $productRows = '';
+        foreach ($products as $product) {
+            $productRows .= sprintf(
+                '<tr>
+                    <td style="padding:8px; border:1px solid #ddd;">%s</td>
+                    <td style="padding:8px; border:1px solid #ddd;">%d</td>
+                    <td style="padding:8px; border:1px solid #ddd;">₹%s</td>
+                </tr>',
+                htmlspecialchars($product->name),
+                $product->pivot->quantity,
+                number_format($product->price, 2)
+            );
+        }
+
+        // Email body HTML
+        $emailContent = sprintf(
+            '<body style="background-color:#f9fafb; font-family:Arial, sans-serif; padding:2rem;">
+                <table style="width:100%%; max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:8px; padding:2rem; box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                    <tr>
+                        <td style="padding-bottom:1rem;">
+                            <h1 style="font-size:1.5rem; font-weight:600; color:#3b82f6; margin:0;">Order Confirmation</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-bottom:1rem;">Hi %s,</td>
+                    </tr>
+                    <tr>
+                        <td style="padding-bottom:1rem;">Your order has been successfully placed. Below are your order details:</td>
+                    </tr>
+                    <tr><td><strong>Order Slug:</strong> %s</td></tr>
+                    <tr><td><strong>Total Quantity:</strong> %d</td></tr>
+                    <tr><td><strong>Total Price:</strong> ₹%s</td></tr>
+                    <tr><td><strong>Status:</strong> %s</td></tr>
+                    <tr><td><strong>Active:</strong> %s</td></tr>
+                </table> 
+            </body>',
+            htmlspecialchars($customer->name),
+            htmlspecialchars($item->slug),
+            $item->total_quantity,
+            number_format($item->total_price, 2),
+            htmlspecialchars($statusName),
+            $item->is_active ? 'Yes' : 'No',
+            $productRows
+        );
+
+        // Send the email
+        VaahMail::dispatchGenericMail($subject, $emailContent, [
+            ['email' => $customer->email, 'name' => $customer->name]
+        ]);
+    }
+
+
+
+public static function sendOrderUpdateMail($item, $changes)
+{
+    if (empty($changes)) {
+        return;
+    }
+
+    $subject = 'Order Update Notification';
+
+    $item->load('customer');
+    $customer = $item->customer;
+
+    $allowedFields = [
+        'name', 'slug', 'status_id', 'total_price', 'total_quantity', 'is_active'
+    ];
+
+    $changeDetails = '';
+    $statusChanged = false;
+
+    foreach ($changes as $field => $vals) {
+        if (!in_array($field, $allowedFields)) {
+            continue;
+        }
+
+        $oldVal = $vals['old'];
+        $newVal = $vals['new'];
+
+        if ($field === 'status_id') {
+            $oldStatus = Taxonomy::find($oldVal);
+            $newStatus = Taxonomy::find($newVal);
+
+            $oldVal = $oldStatus ? $oldStatus->name : 'Unknown';
+            $newVal = $newStatus ? $newStatus->name : 'Unknown';
+
+            $field = 'Status';
+            $statusChanged = true;
+        }
+
+        if (is_array($oldVal) || is_object($oldVal)) {
+            $oldVal = json_encode($oldVal);
+        }
+
+        if (is_array($newVal) || is_object($newVal)) {
+            $newVal = json_encode($newVal);
+        }
+
+        $changeDetails .= sprintf(
+            '<tr>
+                <td style="padding:8px; border:1px solid #ddd;">%s</td>
+                <td style="padding:8px; border:1px solid #ddd;">%s</td>
+                <td style="padding:8px; border:1px solid #ddd;">%s</td>
+            </tr>',
+            ucfirst(str_replace('_', ' ', $field)),
+            htmlspecialchars($oldVal),
+            htmlspecialchars($newVal)
+        );
+    }
+
+    if (empty($changeDetails)) {
+        return;
+    }
+
+    // Extra message if status changed
+    $extraInfo = '';
+    if ($statusChanged) {
+        $extraInfo = sprintf(
+            '<p style="margin:1rem 0; font-weight:bold;">Order ID: %s<br>Customer: %s</p>',
+            htmlspecialchars($item->id),
+            htmlspecialchars($customer->name)
+        );
+    }
+
+    $emailContent = sprintf(
+        '<body style="background-color:#f9fafb; font-family:Arial, sans-serif; padding:2rem;">
+            <table style="width:100%%; max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:8px; padding:2rem; box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                <tr><td style="padding-bottom:1rem;">
+                    <h1 style="font-size:1.5rem; font-weight:600; color:#3b82f6; margin:0;">Order Update</h1>
+                </td></tr>
+                <tr><td style="padding-bottom:1rem;">Hi %s,</td></tr>
+                <tr><td style="padding-bottom:1rem;">The following changes have been made to your order <strong>%s</strong>:</td></tr>
+                <tr><td>%s</td></tr>
+                <tr><td>
+                    <table style="width:100%%; border-collapse:collapse; margin-top:1rem;">
+                        <thead>
+                            <tr style="background-color:#f1f5f9;">
+                                <th style="padding:8px; border:1px solid #ddd;">Field</th>
+                                <th style="padding:8px; border:1px solid #ddd;">Old Value</th>
+                                <th style="padding:8px; border:1px solid #ddd;">New Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            %s
+                        </tbody>
+                    </table>
+                </td></tr>
+                <tr><td style="padding-top:1rem;">Thank you,<br>Support Team</td></tr>
+            </table>
+        </body>',
+        htmlspecialchars($customer->name),
+        htmlspecialchars($item->slug ?? $item->name ?? 'Order #' . $item->id),
+        $extraInfo,
+        $changeDetails
+    );
+
+    VaahMail::dispatchGenericMail($subject, $emailContent, [
+        ['email' => $customer->email, 'name' => $customer->name]
+    ]);
+}
+
+
+
+
+
+
     //-------------------------------------------------
     public function scopeBetweenDates($query, $from, $to)
     {
@@ -162,7 +352,7 @@ class order extends VaahModel
     //-------------------------------------------------
     public static function createItem($request)
     {
-
+       
         $inputs = $request->all();
 
         $validation = self::validation($inputs);
@@ -197,6 +387,10 @@ class order extends VaahModel
         $item->fill($inputs);
 
         $item->save();
+        //VaahMail::send(new orderstatusMail(), $item->email);
+
+        self::orderMail($item);
+
         
         // Only attach id and quantity (not price)
         $pivotData = collect($products)->mapWithKeys(function($prod) {
@@ -506,6 +700,7 @@ class order extends VaahModel
 
     }
     //-------------------------------------------------
+    
     public static function updateItem($request, $id)
     {
         $inputs = $request->all();
@@ -515,51 +710,79 @@ class order extends VaahModel
             return $validation;
         }
 
-        // check if name exist
+        // Check if name exists
         $item = self::where('id', '!=', $id)
             ->withTrashed()
             ->where('name', $inputs['name'])->first();
 
-         if ($item) {
-             $error_message = "This name is already exist".($item->deleted_at?' in trash.':'.');
-             $response['success'] = false;
-             $response['errors'][] = $error_message;
-             return $response;
-         }
+        if ($item) {
+            $error_message = "This name is already exist" . ($item->deleted_at ? ' in trash.' : '.');
+            $response['success'] = false;
+            $response['errors'][] = $error_message;
+            return $response;
+        }
 
-         
-         // check if slug exist
-         $item = self::where('id', '!=', $id)
-             ->withTrashed()
-             ->where('slug', $inputs['slug'])->first();
+        // Check if slug exists
+        $item = self::where('id', '!=', $id)
+            ->withTrashed()
+            ->where('slug', $inputs['slug'])->first();
 
-         if ($item) {
-             $error_message = "This slug is already exist".($item->deleted_at?' in trash.':'.');
-             $response['success'] = false;
-             $response['errors'][] = $error_message;
-             return $response;
-         }
+        if ($item) {
+            $error_message = "This slug is already exist" . ($item->deleted_at ? ' in trash.' : '.');
+            $response['success'] = false;
+            $response['errors'][] = $error_message;
+            return $response;
+        }
 
-        $item = self::where('id', $id)->withTrashed()->first();
+        // Store original before update
+        $item = self::where('id', $id)->with(['status', 'customer'])->withTrashed()->first();
+        $original = $item->getOriginal();
 
+        // Capture product input before unset
         $products = isset($inputs['products']) ? $inputs['products'] : [];
         unset($inputs['products']);
+
+        // Detect changed fields
+        $changes = [];
+        foreach ($inputs as $key => $newValue) {
+            $oldValue = $original[$key] ?? null;
+
+            // Normalize numeric string comparison
+            if (is_numeric($oldValue) && is_numeric($newValue)) {
+                $oldValue = (string)$oldValue;
+                $newValue = (string)$newValue;
+            }
+
+            if ($oldValue !== $newValue) {
+                $changes[$key] = [
+                    'old' => $oldValue,
+                    'new' => $newValue
+                ];
+            }
+        }
+
+        // Update the item
         $item->fill($inputs);
         $item->save();
 
-       $products = isset($inputs['products']) ? $inputs['products'] : [];
-        $pivotData = collect($products)->mapWithKeys(function($prod) {
+        // Update products
+        $pivotData = collect($products)->mapWithKeys(function ($prod) {
             return [$prod['id'] => ['quantity' => $prod['quantity']]];
         })->toArray();
-
-        // Use sync for update
         $item->products()->sync($pivotData);
 
+       
+        if (!empty($changes)) {
+            self::sendOrderUpdateMail($item, $changes);
+        }
+
+        // Return updated item
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");
         return $response;
-
     }
+
+
     //-------------------------------------------------
     public static function deleteItem($request, $id): array
     {

@@ -17,9 +17,9 @@ class OrderProduct extends Migration
         Schema::create('order_product', function (Blueprint $table) {
             $table->increments('id');
             $table->uuid('uuid')->nullable()->index();
-            $table->integer('order_id')->unsigned()->index();
-            $table->integer('product_id')->unsigned()->index();
-            $table->integer('quantity');
+            $table->integer('order_id')->nullable()->index();
+            $table->integer('product_id')->nullable()->index();
+            $table->integer('quantity')->nullable()->index();
 
             //----common fields
             $table->text('meta')->nullable();

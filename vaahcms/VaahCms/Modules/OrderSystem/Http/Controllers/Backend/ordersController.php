@@ -7,6 +7,7 @@ use VaahCms\Modules\ordersystem\Http\Controllers\Backend\OrderProductsController
 use VaahCms\Modules\OrderSystem\Models\customer;
 use VaahCms\Modules\OrderSystem\Models\order;
 use VaahCms\Modules\OrderSystem\Models\Product;
+use WebReinvent\VaahCms\Models\Taxonomy;
 
 class ordersController extends Controller
 {
@@ -26,6 +27,8 @@ class ordersController extends Controller
         try{
 
             $data = [];
+            $type ='order-status';
+            
 
             $data['permission'] = [];
             $data['rows'] = config('vaahcms.per_page');
@@ -33,6 +36,8 @@ class ordersController extends Controller
             $data['fillable']['columns'] = order::getFillableColumns();
             $data['fillable']['except'] = order::getUnFillableColumns();
             $data['empty_item'] = order::getEmptyItem();
+
+            $data['status'] = Taxonomy::getTaxonomyByType($type);
             $data['customers'] = customer::all();
             $data['products'] = Product::all();
 
