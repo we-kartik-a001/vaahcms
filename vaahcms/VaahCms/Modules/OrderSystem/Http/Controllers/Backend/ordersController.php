@@ -153,25 +153,7 @@ class ordersController extends Controller
     public function createItem(Request $request)
     {
         try{
-            // $inputs = $request->all();
-
-            // Products ko alag nikaal lo
-                // $products = isset($inputs['products']) ? $inputs['products'] : [];
-                // unset($inputs['products']);
-
-            // Order create karo
             $order = order::createItem($request);
-
-
-            // OrderProductsController ka store method call karo
-            // if (!empty($products)) {
-            //     app(\VaahCms\Modules\ordersystem\Http\Controllers\Backend\OrderProductsController::class)
-            //         ->store(new Request([
-            //             'order_id' => $order->id,
-            //              'products' => $products
-            //             ]));
-            //     }
-
             return  $order;
         }catch (\Exception $e){
             $response = [];

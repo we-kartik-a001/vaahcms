@@ -22,7 +22,7 @@ class Orders extends Migration
                 $table->string('name')->nullable()->index();
                 $table->integer('customer_id')->nullable()->index();
                 $table->string('total_price')->nullable()->index();
-                $table->string('total_quantity')->nullable()->index();
+                $table->integer('total_quantity')->nullable()->index();
                 $table->integer('status_id')->nullable()->index();
                 $table->string('slug')->nullable()->index();
                 $table->boolean('is_active')->nullable()->index();

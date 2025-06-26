@@ -4,7 +4,7 @@ import {useRoute} from 'vue-router';
 
 import { useProductStore } from '../../stores/store-products'
 
-// import VhViewRow from '../../vaahvue/vue-three/primeflex/VhViewRow.vue';
+import VhViewRow from '../../vaahvue/vue-three/primeflex/VhViewRow.vue';
 const store = useProductStore();
 const route = useRoute();
 

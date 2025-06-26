@@ -7,15 +7,9 @@ import { useRoute } from 'vue-router';
 const store = useorderStore();
 const route = useRoute();
 
-//--------form_menu
-const form_menu = ref();
-const toggleFormMenu = (event) => {
-    form_menu.value.toggle(event);
-};
-//--------/form_menu
 
-const selectedProductIds = ref([])
-const quantities = ref({})
+// /const store.selectedProductIds = ref([])
+// const quantities = ref({})
 
 onMounted(async () => {
     if ((!store.item || Object.keys(store.item).length < 1)
@@ -25,42 +19,52 @@ onMounted(async () => {
 
     await store.getFormMenu();
 
-    // Set selected products and quantities on initial load (for edit)
-    if (store.item && Array.isArray(store.item.products)) {
-        selectedProductIds.value = store.item.products.map(p => p.id)
-        store.item.products.forEach((product) => {
-            quantities.value[product.id] = product.pivot?.quantity || product.quantity || 1
-        })
+    if (route.params && route.params.id) {
+        await store.getItem(route.params.id);
+        initializeSelectedProducts();
     }
 })
+
+async function initializeSelectedProducts() {
+    // Set selected products and quantities on initial load (for edit)
+    if (store.item && Array.isArray(store.item.products)) {
+        store.selectedProductIds = store.item.products.map(p => p.id)
+        store.item.products.forEach((product) => {
+            store.quantities[product.id] = product.pivot?.quantity || product.quantity || 1
+        })
+    }
+}
+
+//--------form_menu
+const form_menu = ref();
+const toggleFormMenu = (event) => {
+    form_menu.value.toggle(event);
+};
+//--------/form_menu
 
 watch(() => route.params.id, async (newId) => {
     if (newId) {
-        selectedProductIds.value = []
-        quantities.value = {}
-        await store.getItem(newId)
+        store.selectedProductIds = []
+        store.quantities = {}
+        await store.getItem(newId);
+        initializeSelectedProducts();
 
-        if (store.item && Array.isArray(store.item.products)) {
-            selectedProductIds.value = store.item.products.map(p => p.id)
-            store.item.products.forEach((product) => {
-                quantities.value[product.id] = product.pivot?.quantity || product.quantity || 0
-            })
-        }
+        // if (store.item && Array.isArray(store.item.products)) {
+        //     store.selectedProductIds = store.item.products.map(p => p.id)
+        //     store.item.products.forEach((product) => {
+        //         quantities.value[product.id] = product.pivot?.quantity || product.quantity || 0
+        //     })
+        // }
     }
 })
 
-// Keep store.item.products in sync (do not modify pivot data directly)
-watch(selectedProductIds, (val) => {
-    // DO NOT assign raw IDs here because that would overwrite your full product objects
-    // The correct format is set only in prepareOrderBeforeSave()
-})
 
 // Total per product
 const productTotals = computed(() => {
     const totals = {}
-    selectedProductIds.value.forEach((id) => {
+    store.selectedProductIds.forEach((id) => {
         const product = store.assets.products.find(p => p.id === id)
-        const qty = quantities.value[id] || 0
+        const qty = store.quantities[id] || 0
         totals[id] = qty * parseFloat(product?.price || 0)
     })
     return totals
@@ -73,11 +77,11 @@ const grandTotal = computed(() => {
 
 // Pivot data for backend
 const pivotData = computed(() => {
-    return selectedProductIds.value.map(id => {
-        const quantity = quantities.value[id] || 0
+    return store.selectedProductIds.map(id => {
+        // const quantity = quantities.value[id] || 0
         return {
             id: id,
-            quantity: quantity
+            quantity: store.quantities[id] || 0
         }
     })
 })
@@ -85,17 +89,17 @@ const pivotData = computed(() => {
 // Prepare final order data before saving
 const prepareOrderBeforeSave = (action) => {
     store.item.total_price = grandTotal.value
-    store.item.total_quantity = totalQuantity.value  
+    store.item.total_quantity = totalQuantity.value
     store.item.products = pivotData.value
 
     if (action === 'create-and-new') {
-        selectedProductIds.value = []
-        quantities.value = {}
+        store.selectedProductIds = []
+        store.quantities = {}
     }
 }
 
 const totalQuantity = computed(() => {
-    return Object.values(quantities.value).reduce((sum, qty) => sum + Number(qty), 0)
+    return Object.values(store.quantities).reduce((sum, qty) => sum + Number(qty), 0)
 })
 </script>
 
@@ -167,8 +171,8 @@ const totalQuantity = computed(() => {
                 </VhField>
 
                 <VhField label="Customer">
-                    <Dropdown v-model="store.item.customer_id" :options="store.assets.customers" optionLabel="name"
-                        optionValue="id" placeholder="Select Customer" class="w-full md:w-19rem"
+                    <Dropdown v-model="store.item.customer_id" :options="store.assets.customers || []"
+                        optionLabel="name" optionValue="id" placeholder="Select Customer" class="w-full md:w-19rem"
                         data-testid="orders-customer" />
                 </VhField>
 
@@ -179,20 +183,20 @@ const totalQuantity = computed(() => {
                         <div class="required-field hidden"></div>
                     </div>
                 </VhField>
-
+{{ store.selectedProductIds }}
                 <VhField label="Products">
-                    <MultiSelect v-model="selectedProductIds" :options="store.assets.products" optionLabel="name"
+                    <MultiSelect v-model="store.selectedProductIds" :options="store.assets.products || []" optionLabel="name"
                         optionValue="id" filter placeholder="Select Products" :maxSelectedLabels="3"
                         class="w-full md:w-80" />
 
                     <!-- For each selected product -->
-                    <div v-for="productId in selectedProductIds" :key="productId"
+                    <div v-for="productId in store.selectedProductIds" :key="productId"
                         class="flex flex-col gap-3 py-3 items-center space-x-4">
                         <div class="w-48 font-medium flex pt-1">
                             {{store.assets.products.find(p => p.id === productId)?.name}}
                         </div>
 
-                        <InputNumber v-model="quantities[productId]" :min="1" showButtons buttonLayout="horizontal"
+                        <InputNumber v-model="store.quantities[productId]" :min="1" showButtons buttonLayout="horizontal"
                             :inputStyle="{ width: '4rem', textAlign: 'center' }" />
 
                         <div class="w-48 font-medium flex pt-1">
@@ -214,7 +218,7 @@ const totalQuantity = computed(() => {
 
 
                 <VhField label="Status">
-                    <Dropdown v-model="store.item.status_id" :options="store.assets.status" optionLabel="name"
+                    <Dropdown v-model="store.item.status_id" :options="store.assets.status || []" optionLabel="name"
                         optionValue="id" placeholder="Select a Status" class="w-full md:w-14rem" />
                 </VhField>
 

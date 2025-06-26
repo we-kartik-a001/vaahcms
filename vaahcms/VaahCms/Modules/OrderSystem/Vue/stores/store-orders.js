@@ -65,7 +65,10 @@ export const useorderStore = defineStore({
         list_create_menu: [],
         item_menu_list: [],
         item_menu_state: null,
-        form_menu_list: []
+        form_menu_list: [],
+        selectedProductIds:[],
+        quantities : {}
+
     }),
     getters: {
 
@@ -210,6 +213,12 @@ export const useorderStore = defineStore({
             let options = {
                 query: vaah().clone(this.query)
             };
+
+
+            // added this to reload assets every time form loads
+            this.assets_is_fetching = true;
+            this.getAssets();
+            
             await vaah().ajax(
                 this.ajax_url,
                 this.afterGetList,
@@ -495,15 +504,43 @@ export const useorderStore = defineStore({
             );
         },
         //---------------------------------------------------------------------
-        getFormInputsAfter: function (data, res) {
-            if(data)
-            {
-                let self = this;
-                Object.keys(data.fill).forEach(function(key) {
-                    self.item[key] = data.fill[key];
-                });
+        // getFormInputsAfter: function (data, res) {
+        //     if(data)
+        //     {
+        //         let self = this;
+        //         Object.keys(data.fill).forEach(function(key) {
+        //             self.item[key] = data.fill[key];
+        //         });
+        //     }
+        // },
+
+        getFormInputsAfter(data, res) {
+            if (data && data.fill) {
+                let fill = data.fill;
+
+                // Fill basic fields
+                for (const key in fill) {
+                    if (key !== 'products') {
+                        this.item[key] = fill[key];
+                    }
+                }
+
+                // Handle selected products and quantities
+                if (Array.isArray(fill.products)) {
+                    this.selectedProductIds = fill.products.map(p => p.id);
+
+                    this.quantities = {};
+                    fill.products.forEach(product => {
+                        this.quantities[product.id] = product.quantity || 1;
+                    });
+
+                    // 🔁 Also store full product data in item.products for edit compatibility
+                    this.item.products = fill.products;
+                }
             }
-        },
+        }
+        ,
+        
 
         //---------------------------------------------------------------------
 

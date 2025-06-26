@@ -41,7 +41,7 @@ const useVaah = vaah();
 
             </Column>
 
-             <Column field="total_price" header="Amount"
+             <Column field="customer_id" header="Customer"
                     class="overflow-wrap-anywhere"
                     :sortable="true">
 
@@ -49,21 +49,7 @@ const useVaah = vaah();
                     <Badge v-if="prop.data.deleted_at"  
                            value="Trashed"
                            severity="danger"></Badge>
-                    {{prop.data.total_price}}
-                </template>
-
-            </Column>
-
-            <Column field="status_id" header="Status"
-                    class="overflow-wrap-anywhere"
-                    :sortable="true">
-
-                    
-                <template #body="prop">
-                    <Badge v-if="prop.data.deleted_at"  
-                           value="Trashed"
-                           severity="danger"></Badge>
-                    {{prop.data.status_id}}
+                    {{prop.data.customer.name}}
                 </template>
 
             </Column>
@@ -81,6 +67,32 @@ const useVaah = vaah();
 
             </Column>
 
+            <Column field="status_id" header="Status"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                    
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"  
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.status.name}}
+                </template>
+
+            </Column>
+
+             <Column field="total_price" header="Amount"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"  
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.total_price}}
+                </template>
+
+            </Column>
 
                 <Column field="updated_at" header="Updated"
                         v-if="store.isViewLarge()"

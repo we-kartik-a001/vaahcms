@@ -50,6 +50,9 @@ class order extends VaahModel
     protected $appends = [
     ];
 
+
+    //-------------------------------------------------
+    // Relation
     public function customer()
     {
         return $this->belongsTo(customer::class);
@@ -66,7 +69,6 @@ class order extends VaahModel
     {
         return $this->belongsTo(Taxonomy::class, 'status_id',);
     }
-
 
     //-------------------------------------------------
     protected function serializeDate(DateTimeInterface $date)
@@ -150,8 +152,10 @@ class order extends VaahModel
         return $query->select(array_diff($this->getTableColumns(), $columns));
     }
 
-    //mail 
-    //----------------
+    //-------------------------------------------------
+
+    //create order mail
+
     public static function orderMail($item)
     {
         $subject = 'Order Confirmation';
@@ -215,120 +219,117 @@ class order extends VaahModel
         ]);
     }
 
+    //-------------------------------------------------
 
-
-public static function sendOrderUpdateMail($item, $changes)
-{
-    if (empty($changes)) {
-        return;
-    }
-
-    $subject = 'Order Update Notification';
-
-    $item->load('customer');
-    $customer = $item->customer;
-
-    $allowedFields = [
-        'name', 'slug', 'status_id', 'total_price', 'total_quantity', 'is_active'
-    ];
-
-    $changeDetails = '';
-    $statusChanged = false;
-
-    foreach ($changes as $field => $vals) {
-        if (!in_array($field, $allowedFields)) {
-            continue;
+    //update in order
+    
+    public static function sendOrderUpdateMail($item, $changes)
+    {
+        if (empty($changes)) {
+            return;
         }
 
-        $oldVal = $vals['old'];
-        $newVal = $vals['new'];
+        $subject = 'Order Update Notification';
 
-        if ($field === 'status_id') {
-            $oldStatus = Taxonomy::find($oldVal);
-            $newStatus = Taxonomy::find($newVal);
+        $item->load('customer');
+        $customer = $item->customer;
 
-            $oldVal = $oldStatus ? $oldStatus->name : 'Unknown';
-            $newVal = $newStatus ? $newStatus->name : 'Unknown';
+        $allowedFields = [
+            'name', 'slug', 'status_id', 'total_price', 'total_quantity', 'is_active'
+        ];
 
-            $field = 'Status';
-            $statusChanged = true;
+        $changeDetails = '';
+        $statusChanged = false;
+
+        foreach ($changes as $field => $vals) {
+            if (!in_array($field, $allowedFields)) {
+                continue;
+            }
+
+            $oldVal = $vals['old'];
+            $newVal = $vals['new'];
+
+            if ($field === 'status_id') {
+                $oldStatus = Taxonomy::find($oldVal);
+                $newStatus = Taxonomy::find($newVal);
+
+                $oldVal = $oldStatus ? $oldStatus->name : 'Unknown';
+                $newVal = $newStatus ? $newStatus->name : 'Unknown';
+
+                $field = 'Status';
+                $statusChanged = true;
+            }
+
+            if (is_array($oldVal) || is_object($oldVal)) {
+                $oldVal = json_encode($oldVal);
+            }
+
+            if (is_array($newVal) || is_object($newVal)) {
+                $newVal = json_encode($newVal);
+            }
+
+            $changeDetails .= sprintf(
+                '<tr>
+                    <td style="padding:8px; border:1px solid #ddd;">%s</td>
+                    <td style="padding:8px; border:1px solid #ddd;">%s</td>
+                    <td style="padding:8px; border:1px solid #ddd;">%s</td>
+                </tr>',
+                ucfirst(str_replace('_', ' ', $field)),
+                htmlspecialchars($oldVal),
+                htmlspecialchars($newVal)
+            );
         }
 
-        if (is_array($oldVal) || is_object($oldVal)) {
-            $oldVal = json_encode($oldVal);
+        if (empty($changeDetails)) {
+            return;
         }
 
-        if (is_array($newVal) || is_object($newVal)) {
-            $newVal = json_encode($newVal);
+        // Extra message if status changed
+        $extraInfo = '';
+        if ($statusChanged) {
+            $extraInfo = sprintf(
+                '<p style="margin:1rem 0; font-weight:bold;">Order ID: %s<br>Customer: %s</p>',
+                htmlspecialchars($item->id),
+                htmlspecialchars($customer->name)
+            );
         }
 
-        $changeDetails .= sprintf(
-            '<tr>
-                <td style="padding:8px; border:1px solid #ddd;">%s</td>
-                <td style="padding:8px; border:1px solid #ddd;">%s</td>
-                <td style="padding:8px; border:1px solid #ddd;">%s</td>
-            </tr>',
-            ucfirst(str_replace('_', ' ', $field)),
-            htmlspecialchars($oldVal),
-            htmlspecialchars($newVal)
+        $emailContent = sprintf(
+            '<body style="background-color:#f9fafb; font-family:Arial, sans-serif; padding:2rem;">
+                <table style="width:100%%; max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:8px; padding:2rem; box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                    <tr><td style="padding-bottom:1rem;">
+                        <h1 style="font-size:1.5rem; font-weight:600; color:#3b82f6; margin:0;">Order Update</h1>
+                    </td></tr>
+                    <tr><td style="padding-bottom:1rem;">Hi %s,</td></tr>
+                    <tr><td style="padding-bottom:1rem;">The following changes have been made to your order <strong>%s</strong>:</td></tr>
+                    <tr><td>%s</td></tr>
+                    <tr><td>
+                        <table style="width:100%%; border-collapse:collapse; margin-top:1rem;">
+                            <thead>
+                                <tr style="background-color:#f1f5f9;">
+                                    <th style="padding:8px; border:1px solid #ddd;">Field</th>
+                                    <th style="padding:8px; border:1px solid #ddd;">Old Value</th>
+                                    <th style="padding:8px; border:1px solid #ddd;">New Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                %s
+                            </tbody>
+                        </table>
+                    </td></tr>
+                    <tr><td style="padding-top:1rem;">Thank you,<br>Support Team</td></tr>
+                </table>
+            </body>',
+            htmlspecialchars($customer->name),
+            htmlspecialchars($item->slug ?? $item->name ?? 'Order #' . $item->id),
+            $extraInfo,
+            $changeDetails
         );
+
+        VaahMail::dispatchGenericMail($subject, $emailContent, [
+            ['email' => $customer->email, 'name' => $customer->name]
+        ]);
     }
-
-    if (empty($changeDetails)) {
-        return;
-    }
-
-    // Extra message if status changed
-    $extraInfo = '';
-    if ($statusChanged) {
-        $extraInfo = sprintf(
-            '<p style="margin:1rem 0; font-weight:bold;">Order ID: %s<br>Customer: %s</p>',
-            htmlspecialchars($item->id),
-            htmlspecialchars($customer->name)
-        );
-    }
-
-    $emailContent = sprintf(
-        '<body style="background-color:#f9fafb; font-family:Arial, sans-serif; padding:2rem;">
-            <table style="width:100%%; max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:8px; padding:2rem; box-shadow:0 0 10px rgba(0,0,0,0.05);">
-                <tr><td style="padding-bottom:1rem;">
-                    <h1 style="font-size:1.5rem; font-weight:600; color:#3b82f6; margin:0;">Order Update</h1>
-                </td></tr>
-                <tr><td style="padding-bottom:1rem;">Hi %s,</td></tr>
-                <tr><td style="padding-bottom:1rem;">The following changes have been made to your order <strong>%s</strong>:</td></tr>
-                <tr><td>%s</td></tr>
-                <tr><td>
-                    <table style="width:100%%; border-collapse:collapse; margin-top:1rem;">
-                        <thead>
-                            <tr style="background-color:#f1f5f9;">
-                                <th style="padding:8px; border:1px solid #ddd;">Field</th>
-                                <th style="padding:8px; border:1px solid #ddd;">Old Value</th>
-                                <th style="padding:8px; border:1px solid #ddd;">New Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            %s
-                        </tbody>
-                    </table>
-                </td></tr>
-                <tr><td style="padding-top:1rem;">Thank you,<br>Support Team</td></tr>
-            </table>
-        </body>',
-        htmlspecialchars($customer->name),
-        htmlspecialchars($item->slug ?? $item->name ?? 'Order #' . $item->id),
-        $extraInfo,
-        $changeDetails
-    );
-
-    VaahMail::dispatchGenericMail($subject, $emailContent, [
-        ['email' => $customer->email, 'name' => $customer->name]
-    ]);
-}
-
-
-
-
-
 
     //-------------------------------------------------
     public function scopeBetweenDates($query, $from, $to)
@@ -482,8 +483,17 @@ public static function sendOrderUpdateMail($item, $changes)
         foreach ($search_array as $search_item){
             $query->where(function ($q1) use ($search_item) {
                 $q1->where('name', 'LIKE', '%' . $search_item . '%')
+                    ->orWhere('total_price', 'LIKE', '%' . $search_item . '%')
+                    ->orWhere('total_quantity', 'LIKE', '%' . $search_item . '%')
                     ->orWhere('slug', 'LIKE', '%' . $search_item . '%')
                     ->orWhere('id', 'LIKE', $search_item . '%');
+                    //  ->orWhereHas('customer', function ($q2) use ($search_item) {
+                    //     $q2->where('name', 'LIKE', '%' . $search_item . '%');
+                    // })
+                    // ->orWhereHas('status', function ($q3) use ($search_item) {
+                    //     $q3->where('name', 'LIKE', '%' . $search_item . '%');
+                    // });
+                   
             });
         }
 
@@ -495,7 +505,7 @@ public static function sendOrderUpdateMail($item, $changes)
         $list->isActiveFilter($request->filter);
         $list->trashedFilter($request->filter);
         $list->searchFilter($request->filter);
-        $list->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer']); 
+        $list->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer','status']); 
 
         $rows = config('vaahcms.per_page');
 
@@ -686,12 +696,14 @@ public static function sendOrderUpdateMail($item, $changes)
             return $response;
         }
 
-        if ($item->products) {
-            $item->products->transform(function($product) {
-                $product->quantity = $product->pivot->quantity;
-                return $product;
-            });
-        }
+        
+         // ✅ Add pivot quantity to each product object for Vue use
+    if ($item->products) {
+        $item->products->transform(function ($product) {
+            $product->quantity = $product->pivot->quantity ?? 0;
+            return $product;
+        });
+    }
 
         $response['success'] = true;
         $response['data'] = $item;
@@ -881,35 +893,74 @@ public static function sendOrderUpdateMail($item, $changes)
 
     }
 
+    public static function getOrderStatuses()
+    {
+        $statuses = Taxonomy::getTaxonomyByType('order-status');
+        return $statuses->pluck('id')->toArray();
+    }
 
-    //-------------------------------------------------
-    public static function fillItem($is_response_return = true)
+
+    //------------------------------------------------
+   public static function fillItem($is_response_return = true)
     {
         $request = new Request([
             'model_namespace' => self::class,
             'except' => self::getUnFillableColumns()
         ]);
+
         $fillable = VaahSeeder::fill($request);
-        if(!$fillable['success']){
+
+        if (!$fillable['success']) {
             return $fillable;
         }
-        $inputs = $fillable['data']['fill'];
 
+        $inputs = $fillable['data']['fill'];
         $faker = Factory::create();
 
-        /*
-         * You can override the filled variables below this line.
-         * You should also return relationship from here
-         */
+        // Add fake name and slug
+        $inputs['name'] = $faker->words(2, true);
+        $inputs['slug'] = Str::slug($inputs['name']);
+        $inputs['is_active'] = 1;
 
-        if(!$is_response_return){
+        // Add random customer ID
+        $inputs['customer_id'] = Customer::inRandomOrder()->value('id');
+
+        // Add status_id from order_status taxonomy
+        $status_ids = self::getOrderStatuses();
+        $inputs['status_id'] = $faker->randomElement($status_ids);
+
+        // Add random products with quantities, and include name and price
+        $products = Product::inRandomOrder()->take(rand(1, 3))->get();
+        $pivot_products = [];
+        $total_quantity = 0;
+        $total_price = 0;
+
+        foreach ($products as $product) {
+            $quantity = rand(1, 5);
+            $total_quantity += $quantity;
+            $total_price += $product->price * $quantity;
+
+            $pivot_products[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'quantity' => $quantity,
+            ];
+        }
+
+        $inputs['products'] = $pivot_products;
+        $inputs['total_quantity'] = $total_quantity;
+        $inputs['total_price'] = $total_price;
+
+        if (!$is_response_return) {
             return $inputs;
         }
 
         $response['success'] = true;
-        $response['data']['fill'] = $inputs;
-        return $response;
+            $response['data']['fill'] = $inputs;
+            return $response;
     }
+
 
     //-------------------------------------------------
     //-------------------------------------------------
