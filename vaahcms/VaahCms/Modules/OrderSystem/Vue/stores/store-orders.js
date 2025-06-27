@@ -51,6 +51,7 @@ export const useorderStore = defineStore({
         watch_stopper: null,
         route_prefix: 'orders.',
         view: 'large',
+        show_advance_filter:false,
         show_filters: false,
         list_view_width: 12,
         form: {
@@ -67,7 +68,8 @@ export const useorderStore = defineStore({
         item_menu_state: null,
         form_menu_list: [],
         selectedProductIds:[],
-        quantities : {}
+        quantities : {},
+        pricing : ([20, 200000]),
 
     }),
     getters: {
@@ -112,6 +114,7 @@ export const useorderStore = defineStore({
                 default:
                     this.view = 'small';
                     this.list_view_width = 6;
+                    this.show_advance_filter= false;
                     this.show_filters = false;
                     break
             }

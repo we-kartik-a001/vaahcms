@@ -50,6 +50,20 @@ const toggleBulkMenuState = (event) => {
                 <Menu ref="selected_menu_state"
                       :model="store.list_selected_menu"
                       :popup="true" />
+                
+               <Button
+                    type="button"
+                    class="p-button-sm"
+                    :disabled="Object.keys(route.params).length"
+                    data-testid="orders-actions-show-filters"
+                    @click="
+                        store.show_advance_filter = !store.show_advance_filter;
+                        store.show_filters = false;
+                    ">
+                    Advance Filter
+                    <Badge v-if="store.count_filters > 0" :value="store.count_filters"></Badge>
+                </Button>
+
                 <!--/selected_menu-->
 
             </div>
@@ -76,12 +90,16 @@ const toggleBulkMenuState = (event) => {
                                     class="p-button-sm"
                                     data-testid="orders-actions-search-button"
                                     icon="pi pi-search"/>
+
                             <Button
                                 type="button"
                                 class="p-button-sm"
                                 :disabled="Object.keys(route.params).length"
                                 data-testid="orders-actions-show-filters"
-                                @click="store.show_filters = !store.show_filters">
+                                @click="
+                                    store.show_filters = !store.show_filters;
+                                    store.show_advance_filter = false;
+                                ">
                                 Filters
                                 <Badge v-if="store.count_filters > 0" :value="store.count_filters"></Badge>
                             </Button>

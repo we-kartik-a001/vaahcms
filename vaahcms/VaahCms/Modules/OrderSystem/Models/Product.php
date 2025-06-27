@@ -639,6 +639,14 @@ class Product extends VaahModel
          * You can override the filled variables below this line.
          * You should also return relationship from here
          */
+        
+        $inputs['name'] = $faker->words(2, true);
+        $inputs['description'] = $faker->sentence();
+        $inputs['price'] = $faker->randomFloat(2, 100, 10000); // Example: ₹100 - ₹10,000
+        $inputs['slug'] = Str::slug($inputs['name']);
+        $inputs['is_active'] = 1;
+        $inputs['meta'] = null;
+
 
         if(!$is_response_return){
             return $inputs;

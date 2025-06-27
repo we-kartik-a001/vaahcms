@@ -14,6 +14,7 @@ const root = useRootStore();
 const route = useRoute();
 
 import { useConfirm } from "primevue/useconfirm";
+import AdvanceFilters from "./components/AdvanceFilters.vue";
 const confirm = useConfirm();
 
 
@@ -65,7 +66,7 @@ const toggleCreateMenu = (event) => {
 
     <div class="grid" v-if="store.assets">
 
-        <div :class="'col-'+(store.show_filters?9:store.list_view_width)">
+        <div :class="'col-'+(store.show_filters || store.show_advance_filter ?9:store.list_view_width)">
             <Panel class="is-small">
 
                 <template class="p-1" #header>
@@ -128,6 +129,7 @@ const toggleCreateMenu = (event) => {
         </div>
 
          <Filters/>
+          <AdvanceFilters/>
 
         <RouterView/>
     </div>

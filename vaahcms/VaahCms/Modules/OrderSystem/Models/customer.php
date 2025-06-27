@@ -636,6 +636,9 @@ class customer extends VaahModel
          * You can override the filled variables below this line.
          * You should also return relationship from here
          */
+        $inputs['name'] = $faker->name;
+        $inputs['email'] = $faker->unique()->safeEmail;
+        $inputs['slug'] = Str::slug($inputs['name'] . '-' . uniqid());
 
         if(!$is_response_return){
             return $inputs;

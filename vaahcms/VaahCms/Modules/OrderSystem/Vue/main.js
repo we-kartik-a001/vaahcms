@@ -36,6 +36,8 @@ import Tag from "primevue/tag";
 import Dropdown from 'primevue/dropdown'; 
 import MultiSelect from 'primevue/multiselect';
 import InputNumber from 'primevue/inputnumber';
+import Slider from 'primevue/slider';
+
 
 
 //-------------/CRUD PrimeVue Imports
@@ -93,6 +95,7 @@ app.component('Tag', Tag);
 app.component('Dropdown', Dropdown);
 app.component('MultiSelect', MultiSelect);
 app.component('InputNumber', InputNumber);
+app.component('Slider', Slider);
 //-------------/CRUD PrimeVue Use
 
 

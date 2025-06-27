@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Faker\Factory;
 use VaahCms\Modules\OrderSystem\Mails\orderstatusMail;
+use VaahCms\Modules\OrderSystem\Traits\TrashEmail;
 use WebReinvent\VaahCms\Libraries\VaahMail;
 use WebReinvent\VaahCms\Models\VaahModel;
 use WebReinvent\VaahCms\Traits\CrudWithUuidObservantTrait;
@@ -18,6 +19,7 @@ class order extends VaahModel
 
     use SoftDeletes;
     use CrudWithUuidObservantTrait;
+    use TrashEmail;
 
     //-------------------------------------------------
     protected $table = 'orders';
@@ -108,7 +110,6 @@ class order extends VaahModel
         {
             $empty_item[$column] = null;
         }
-
         $empty_item['is_active'] = 1;
 
         return $empty_item;
@@ -390,7 +391,7 @@ class order extends VaahModel
         $item->save();
         //VaahMail::send(new orderstatusMail(), $item->email);
 
-        self::orderMail($item);
+        // self::orderMail($item);
 
         
         // Only attach id and quantity (not price)
@@ -403,6 +404,39 @@ class order extends VaahModel
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");
         return $response;
+
+    }
+
+    public function scopeFilterByPrice($query, $filter)
+    {
+        // If both are missing, skip filtering
+        if (!isset($filter['price_min']) && !isset($filter['price_max'])) {
+            return $query;
+        }
+
+        // Set defaults if only one bound is provided
+        $min = isset($filter['price_min']) ? (float) $filter['price_min'] : null;
+        $max = isset($filter['price_max']) ? (float) $filter['price_max']: null;
+
+        // dd($min,$max);
+        
+        // Apply range condition
+        return $query->whereBetween('total_price', [$min, $max]);
+    }
+
+
+    //-------------------------------------------------
+    public function scopeFilterByStatus($query, $filter)
+    {
+        if (!isset($filter['status_id'])) {
+            return $query;
+        }
+
+        $status_id = $filter['status_id'];
+
+        if ($status_id) {
+            return $query->where('status_id', $status_id);
+        }
 
     }
 
@@ -486,13 +520,13 @@ class order extends VaahModel
                     ->orWhere('total_price', 'LIKE', '%' . $search_item . '%')
                     ->orWhere('total_quantity', 'LIKE', '%' . $search_item . '%')
                     ->orWhere('slug', 'LIKE', '%' . $search_item . '%')
-                    ->orWhere('id', 'LIKE', $search_item . '%');
-                    //  ->orWhereHas('customer', function ($q2) use ($search_item) {
-                    //     $q2->where('name', 'LIKE', '%' . $search_item . '%');
-                    // })
-                    // ->orWhereHas('status', function ($q3) use ($search_item) {
-                    //     $q3->where('name', 'LIKE', '%' . $search_item . '%');
-                    // });
+                    ->orWhere('id', 'LIKE', $search_item . '%')
+                     ->orWhereHas('customer', function ($q2) use ($search_item) {
+                        $q2->where('name', 'LIKE', '%' . $search_item . '%');
+                    })
+                    ->orWhereHas('status', function ($q3) use ($search_item) {
+                        $q3->where('name', 'LIKE', '%' . $search_item . '%');
+                    });
                    
             });
         }
@@ -505,6 +539,8 @@ class order extends VaahModel
         $list->isActiveFilter($request->filter);
         $list->trashedFilter($request->filter);
         $list->searchFilter($request->filter);
+        $list->filterByStatus($request->filter);
+        $list->filterByPrice($request->filter);
         $list->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer','status']); 
 
         $rows = config('vaahcms.per_page');
@@ -626,6 +662,7 @@ class order extends VaahModel
         if($request->has('filter')){
             $list->getSorted($request->filter);
             $list->isActiveFilter($request->filter);
+            $list->filterByStatus($request->filter);
             $list->trashedFilter($request->filter);
             $list->searchFilter($request->filter);
         }
@@ -641,7 +678,11 @@ class order extends VaahModel
                     ->update(['is_active' => null]);
                 break;
             case 'trash-all':
-                $list->get()->each->delete();
+                $items = $list->get();
+                $items->each->delete();
+                if ($items->count() > 0) {
+                    self::sendDeleteMail($items);
+                }
                 break;
             case 'restore-all':
                 $list->onlyTrashed()->get()
@@ -804,6 +845,8 @@ class order extends VaahModel
             $response['errors'][] = trans("vaahcms-general.record_does_not_exist");
             return $response;
         }
+        $item->products()->detach(); 
+    
         $item->forceDelete();
 
         $response['success'] = true;
@@ -828,8 +871,14 @@ class order extends VaahModel
                     ->update(['is_active' => null]);
                 break;
             case 'trash':
-                self::find($id)
-                    ->delete();
+                $item  = self::find($id);
+                $item->delete();
+                   VaahMail::addInQueue(
+                new TrashMail($item),
+                'test@gmail.com'
+               
+            );
+            break;
                 break;
             case 'restore':
                 self::where('id', $id)

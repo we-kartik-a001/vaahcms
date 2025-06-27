@@ -7,10 +7,6 @@ import { useRoute } from 'vue-router';
 const store = useorderStore();
 const route = useRoute();
 
-
-// /const store.selectedProductIds = ref([])
-// const quantities = ref({})
-
 onMounted(async () => {
     if ((!store.item || Object.keys(store.item).length < 1)
         && route.params && route.params.id) {
@@ -48,13 +44,6 @@ watch(() => route.params.id, async (newId) => {
         store.quantities = {}
         await store.getItem(newId);
         initializeSelectedProducts();
-
-        // if (store.item && Array.isArray(store.item.products)) {
-        //     store.selectedProductIds = store.item.products.map(p => p.id)
-        //     store.item.products.forEach((product) => {
-        //         quantities.value[product.id] = product.pivot?.quantity || product.quantity || 0
-        //     })
-        // }
     }
 })
 
@@ -183,7 +172,7 @@ const totalQuantity = computed(() => {
                         <div class="required-field hidden"></div>
                     </div>
                 </VhField>
-{{ store.selectedProductIds }}
+
                 <VhField label="Products">
                     <MultiSelect v-model="store.selectedProductIds" :options="store.assets.products || []" optionLabel="name"
                         optionValue="id" filter placeholder="Select Products" :maxSelectedLabels="3"
