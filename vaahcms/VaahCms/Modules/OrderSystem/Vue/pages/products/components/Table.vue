@@ -53,6 +53,19 @@ const useVaah = vaah();
                 </template>
 
             </Column>
+    
+             <Column field="stock" header="Stock"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.stock}}
+                </template>
+
+            </Column>
 
              <Column field="price" header="Price"
                     class="overflow-wrap-anywhere"

@@ -29,6 +29,7 @@ class Product extends VaahModel
         'uuid',
         'name',
         'description',
+        'stock',
         'price',
         'slug',
         'is_active',
@@ -648,6 +649,7 @@ class Product extends VaahModel
         $inputs['slug'] = Str::slug($inputs['name']);
         $inputs['is_active'] = 1;
         $inputs['meta'] = null;
+        $inputs['stock']= $faker->numberBetween(0, 1000);
 
 
         if(!$is_response_return){
