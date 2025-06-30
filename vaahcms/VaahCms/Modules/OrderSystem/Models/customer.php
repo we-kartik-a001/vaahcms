@@ -570,6 +570,7 @@ class customer extends VaahModel
 
         $rules = array(
             'name' => 'required|max:150',
+            'email' => 'required|email|max:150',
             'slug' => 'required|max:150',
         );
 

@@ -574,6 +574,8 @@ class Product extends VaahModel
         $rules = array(
             'name' => 'required|max:150',
             'slug' => 'required|max:150',
+            'description' => 'nullable|string|max:255',
+            'price' => 'required|numeric|min:0',
         );
 
         $validator = \Validator::make($inputs, $rules);

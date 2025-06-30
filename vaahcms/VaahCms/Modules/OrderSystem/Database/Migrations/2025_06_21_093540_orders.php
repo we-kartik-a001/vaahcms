@@ -20,7 +20,8 @@ class Orders extends Migration
                 $table->uuid('uuid')->nullable()->index();
 
                 $table->string('name')->nullable()->index();
-                $table->integer('customer_id')->nullable()->index();
+                $table->unsignedBigInteger('customer_id')->nullable();
+
                 $table->decimal('total_price')->nullable()->index();
                 $table->integer('total_quantity')->nullable()->index();
                 $table->integer('status_id')->nullable()->index();
@@ -38,6 +39,7 @@ class Orders extends Migration
                 $table->index(['created_at', 'updated_at', 'deleted_at']);
                 //----/common fields
 
+                $table->foreign('customer_id')->references('id')->on('customers')->nullOnDelete();
             });
         }
 

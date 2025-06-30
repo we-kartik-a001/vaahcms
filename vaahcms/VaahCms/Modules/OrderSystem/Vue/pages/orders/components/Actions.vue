@@ -61,7 +61,6 @@ const toggleBulkMenuState = (event) => {
                         store.show_filters = false;
                     ">
                     Advance Filter
-                    <Badge v-if="store.count_filters > 0" :value="store.count_filters"></Badge>
                 </Button>
 
                 <!--/selected_menu-->

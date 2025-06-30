@@ -664,6 +664,8 @@ export const useorderStore = defineStore({
         {
             this.item = vaah().clone(this.assets.empty_item);
             this.$router.push({name: 'orders.index',query:this.query})
+            this.selectedProductIds= [];
+            this.quantities = {}
         },
         //---------------------------------------------------------------------
         toForm()
@@ -671,6 +673,8 @@ export const useorderStore = defineStore({
             this.item = vaah().clone(this.assets.empty_item);
             this.getFormMenu();
             this.$router.push({name: 'orders.form',query:this.query})
+            this.selectedProductIds= [];
+            this.quantities = {}
         },
         //---------------------------------------------------------------------
         toView(item)

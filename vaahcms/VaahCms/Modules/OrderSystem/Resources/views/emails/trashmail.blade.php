@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>Order Deletion Notification</title>
     <style>
-        table, th, td {
+        table,
+        th,
+        td {
             border: 1px solid #ccc;
             border-collapse: collapse;
         }
 
-        th, td {
+        th,
+        td {
             padding: 10px;
             text-align: left;
         }
@@ -73,70 +77,79 @@
             color: #8b0000;
             font-weight: bold;
         }
-
     </style>
 </head>
+
 <body>
-<div class="container">
-    <div class="header">
-        Order Deletion Notification
-    </div>
 
-    <div class="body">
-        <p>Hello {{ $super_admin ?? 'Admin' }},</p>
+    @php
+        $isMultiple = is_iterable($collection) && count($collection) > 1;
+        $records = $isMultiple ? $collection : [$collection];
+        $first = $records[0] ?? null;
 
-        @php
-            $isMultiple = is_iterable($collection) && count($collection) > 1;
-            $records = $isMultiple ? $collection : [$collection];
-            $first = $records[0] ?? null;
-        @endphp
+        $super_admin_name = trim(
+            ($super_admin->first_name ?? '') . ' ' .
+            ($super_admin->middle_name ?? '') . ' ' .
+            ($super_admin->last_name ?? '')
+        );
+    @endphp
 
-        @if($isMultiple)
-            <p class="title">
-                The following <span class="highlight">{{ count($records) }}</span> orders have been deleted from the system:
-            </p>
-        @else
-            <p class="title">An order has been deleted from the system:</p>
-        @endif
+    <div class="container">
+        <div class="header">
+            Order Deletion Notification
+        </div>
 
-        @if($first)
-            <p class="small-text">
-                <strong>Deleted By:</strong> {{ $first->deletedByUser->name ?? 'System' }}<br>
-                <strong>Deleted At:</strong> {{ $first->deleted_at ?? now() }}
-            </p>
-        @endif
+        <div class="body">
+            <p>Hello {{ $super_admin_name ?: 'Admin' }},</p>
 
-        <table width="100%" style="margin-top: 20px;">
-            <thead>
-                <tr>
-                    <th>#ID</th>
-                    <th>Customer</th>
-                    <th>Total Price</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($records as $order)
+            @if($isMultiple)
+                <p class="title">
+                    The following <span class="highlight">{{ count($records) }}</span> orders have been deleted from the system:
+                </p>
+            @else
+                <p class="title">An order has been deleted from the system:</p>
+            @endif
+
+            @if($first)
+                <p class="small-text">
+                    <strong>Deleted By:</strong> {{ $first->deletedByUser->name ?? 'System' }}<br>
+                    <strong>Deleted At:</strong> {{ $first->deleted_at ?? now() }}
+                </p>
+            @endif
+
+            <table width="100%" style="margin-top: 20px;">
+                <thead>
                     <tr>
-                        <td>{{ $order->id ?? '—' }}</td>
-                        <td>{{ $order->customer->name ?? '—' }}</td>
-                        <td>₹ {{ number_format($order->total_price ?? 0, 2) }}</td>
-                        <td>{{ $order->status->name ?? '—' }}</td>
+                        <th>#ID</th>
+                        <th>Customer</th>
+                        <th>Total Price</th>
+                        <th>Status</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($records as $order)
+                        <tr>
+                            <td>{{ $order->id ?? '—' }}</td>
+                            <td>{{ $order->customer->name ?? '—' }}</td>
+                            <td>₹ {{ number_format($order->total_price ?? 0, 2) }}</td>
+                            <td>{{ $order->status->name ?? '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
 
-        <p class="section-title">Please verify and log this activity for records.</p>
+            <p class="section-title">Please verify and log this activity for records.</p>
 
-        <p class="small-text" style="margin-top: 30px;">
-            — This is an automated message. Do not reply.
-        </p>
+            <p class="small-text" style="margin-top: 30px;">
+                — This is an automated message. Do not reply.
+            </p>
+        </div>
+
+        <div class="footer">
+            &copy; {{ date('Y') }} Order Management System. All rights reserved.
+        </div>
     </div>
 
-    <div class="footer">
-        &copy; {{ date('Y') }} Order Management System. All rights reserved.
-    </div>
-</div>
 </body>
+
 </html>

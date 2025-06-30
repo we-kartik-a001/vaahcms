@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Faker\Factory;
 use VaahCms\Modules\OrderSystem\Mails\orderstatusMail;
+use VaahCms\Modules\OrderSystem\Mails\TrashMail;
 use VaahCms\Modules\OrderSystem\Traits\TrashEmail;
 use WebReinvent\VaahCms\Libraries\VaahMail;
 use WebReinvent\VaahCms\Models\VaahModel;
@@ -57,7 +58,7 @@ class order extends VaahModel
     // Relation
     public function customer()
     {
-        return $this->belongsTo(customer::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function products()
@@ -389,9 +390,8 @@ class order extends VaahModel
         $item->fill($inputs);
 
         $item->save();
-        //VaahMail::send(new orderstatusMail(), $item->email);
 
-        // self::orderMail($item);
+        self::orderMail($item);
 
         
         // Only attach id and quantity (not price)
@@ -756,7 +756,9 @@ class order extends VaahModel
     
     public static function updateItem($request, $id)
     {
+        // dd($request);
         $inputs = $request->all();
+
 
         $validation = self::validation($inputs);
         if (!$validation['success']) {
@@ -870,15 +872,19 @@ class order extends VaahModel
                     ->withTrashed()
                     ->update(['is_active' => null]);
                 break;
-            case 'trash':
-                $item  = self::find($id);
-                $item->delete();
-                   VaahMail::addInQueue(
-                new TrashMail($item),
-                'test@gmail.com'
-               
-            );
-            break;
+           case 'trash':
+                $item = self::find($id);
+
+                if ($item) {
+                    $item->delete();
+
+                     $super_admin = User::first();
+
+                    VaahMail::addInQueue(
+                        new TrashMail($item, $super_admin),
+                        'test@gmail.com'
+                    );
+                }
                 break;
             case 'restore':
                 self::where('id', $id)
@@ -897,6 +903,13 @@ class order extends VaahModel
         $rules = array(
             'name' => 'required|max:150',
             'slug' => 'required|max:150',
+            'customer_id'=> 'required|integer|exists:customers,id', 
+            'total_price'=> 'required|numeric|min:0',
+            'total_quantity'=> 'required|integer|min:1',
+            'status_id'=> 'required|integer|exists:vh_taxonomies,id',
+            'products'=> 'required|array|min:1',
+            'products.*.id' => 'required|integer|exists:products,id',
+            'products.*.quantity' => 'required|integer|min:1',
         );
 
         $validator = \Validator::make($inputs, $rules);

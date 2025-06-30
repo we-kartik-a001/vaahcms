@@ -21,7 +21,7 @@ class Products extends Migration
 
                 $table->string('name')->nullable()->index();
                 $table->string('description')->nullable()->index();
-                $table->string('price')->nullable()->index();
+                $table->decimal('price')->nullable()->index();
 
                 $table->string('slug')->nullable()->index();
                 $table->boolean('is_active')->nullable()->index();

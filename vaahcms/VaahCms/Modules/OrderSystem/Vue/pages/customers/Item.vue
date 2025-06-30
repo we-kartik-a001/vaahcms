@@ -4,7 +4,7 @@ import {useRoute} from 'vue-router';
 
 import { usecustomerStore } from '../../stores/store-customers'
 
-// import VhViewRow from '../../vaahvue/vue-three/primeflex/VhViewRow.vue';
+import VhViewRow from '../../vaahvue/vue-three/primeflex/VhViewRow.vue';
 const store = usecustomerStore();
 const route = useRoute();
 

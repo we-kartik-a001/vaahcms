@@ -162,14 +162,19 @@ const toggleFormMenu = (event) => {
 
                  <VhField label="Price">
                     <div class="p-inputgroup">
-                        <InputText class="w-full"
-                                   placeholder="Enter the price"
-                                   name="products-price"
-                                   data-testid="products-price"
-                                   v-model="store.item.price" required/>
+                        <InputNumber
+                            v-model="store.item.price"
+                            placeholder="Enter the price"
+                            class="w-full"
+                            name="products-price"
+                            data-testid="products-price"
+                            mode="decimal"
+                            required
+                        />
                         <div class="required-field hidden"></div>
                     </div>
                 </VhField>
+
 
                 <VhField label="Slug">
                     <div class="p-inputgroup">

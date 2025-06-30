@@ -19,10 +19,9 @@ onMounted(async () => {
         await store.getItem(route.params.id);
         initializeSelectedProducts();
     }
-})
+});
 
 async function initializeSelectedProducts() {
-    // Set selected products and quantities on initial load (for edit)
     if (store.item && Array.isArray(store.item.products)) {
         store.selectedProductIds = store.item.products.map(p => p.id)
         store.item.products.forEach((product) => {
@@ -31,12 +30,10 @@ async function initializeSelectedProducts() {
     }
 }
 
-//--------form_menu
 const form_menu = ref();
 const toggleFormMenu = (event) => {
     form_menu.value.toggle(event);
 };
-//--------/form_menu
 
 watch(() => route.params.id, async (newId) => {
     if (newId) {
@@ -45,65 +42,59 @@ watch(() => route.params.id, async (newId) => {
         await store.getItem(newId);
         initializeSelectedProducts();
     }
-})
+});
 
+// Realtime quantity update handler
+const updateQuantity = (productId, event) => {
+    const value = Number(event.value || 0);
+    store.quantities[productId] = value;
+};
 
-// Total per product
 const productTotals = computed(() => {
-    const totals = {}
+    const totals = {};
     store.selectedProductIds.forEach((id) => {
-        const product = store.assets.products.find(p => p.id === id)
-        const qty = store.quantities[id] || 0
-        totals[id] = qty * parseFloat(product?.price || 0)
-    })
-    return totals
-})
+        const product = store.assets.products.find(p => p.id === id);
+        const qty = Number(store.quantities[id] || 0);
+        const price = Number(product?.price || 0);
+        totals[id] = qty * price;
+    });
+    return totals;
+});
 
-// Grand total
 const grandTotal = computed(() => {
-    return Object.values(productTotals.value).reduce((sum, val) => sum + val, 0)
-})
-
-// Pivot data for backend
-const pivotData = computed(() => {
-    return store.selectedProductIds.map(id => {
-        // const quantity = quantities.value[id] || 0
-        return {
-            id: id,
-            quantity: store.quantities[id] || 0
-        }
-    })
-})
-
-// Prepare final order data before saving
-const prepareOrderBeforeSave = (action) => {
-    store.item.total_price = grandTotal.value
-    store.item.total_quantity = totalQuantity.value
-    store.item.products = pivotData.value
-
-    if (action === 'create-and-new') {
-        store.selectedProductIds = []
-        store.quantities = {}
-    }
-}
+    return Object.values(productTotals.value).reduce((sum, val) => sum + val, 0);
+});
 
 const totalQuantity = computed(() => {
-    return Object.values(store.quantities).reduce((sum, qty) => sum + Number(qty), 0)
-})
-</script>
+    return Object.values(store.quantities).reduce((sum, qty) => sum + Number(qty), 0);
+});
 
+const pivotData = computed(() => {
+    return store.selectedProductIds.map(id => ({
+        id: id,
+        quantity: store.quantities[id] || 0
+    }));
+});
+
+const prepareOrderBeforeSave = (action) => {
+    store.item.total_price = grandTotal.value;
+    store.item.total_quantity = totalQuantity.value;
+    store.item.products = pivotData.value;
+
+    if (action === 'create-and-new') {
+        store.selectedProductIds = [];
+        store.quantities = {};
+    }
+};
+</script>
 <template>
     <div class="col-6">
         <Panel class="is-small">
             <template class="p-1" #header>
                 <div class="flex flex-row">
                     <div class="p-panel-title">
-                        <span v-if="store.item && store.item.id">
-                            Update
-                        </span>
-                        <span v-else>
-                            Create
-                        </span>
+                        <span v-if="store.item && store.item.id">Update</span>
+                        <span v-else>Create</span>
                     </div>
                 </div>
             </template>
@@ -112,105 +103,106 @@ const totalQuantity = computed(() => {
                 <div class="p-inputgroup">
                     <Button class="p-button-sm" v-tooltip.left="'View'" v-if="store.item && store.item.id"
                         data-testid="orders-view_item" @click="store.toView(store.item)" icon="pi pi-eye" />
-
                     <Button label="Save" class="p-button-sm" v-if="store.item && store.item.id"
                         data-testid="orders-save" @click="prepareOrderBeforeSave(); store.itemAction('save')"
                         icon="pi pi-save" />
-
                     <Button label="Create & New"
                         @click="prepareOrderBeforeSave('create-and-new'); store.itemAction('create-and-new')"
                         class="p-button-sm" data-testid="orders-create-and-new" icon="pi pi-save" />
-
-                    <!--form_menu-->
                     <Button type="button" @click="toggleFormMenu" class="p-button-sm" data-testid="orders-form-menu"
                         icon="pi pi-angle-down" aria-haspopup="true" />
-
                     <Menu ref="form_menu" :model="store.form_menu_list" :popup="true" />
-                    <!--/form_menu-->
-
                     <Button class="p-button-primary p-button-sm" icon="pi pi-times" data-testid="orders-to-list"
-                        @click="store.toList()">
-                    </Button>
+                        @click="store.toList()" />
                 </div>
             </template>
 
             <div v-if="store.item" class="mt-2">
+                <!-- Deleted Message -->
                 <Message severity="error" class="p-container-message mb-3" :closable="false" icon="pi pi-trash"
                     v-if="store.item.deleted_at">
                     <div class="flex align-items-center justify-content-between">
-                        <div class="">
-                            Deleted {{ store.item.deleted_at }}
-                        </div>
+                        <div>Deleted {{ store.item.deleted_at }}</div>
                         <div class="ml-3">
                             <Button label="Restore" class="p-button-sm" data-testid="orders-item-restore"
-                                @click="store.itemAction('restore')">
-                            </Button>
+                                @click="store.itemAction('restore')" />
                         </div>
                     </div>
                 </Message>
 
-                <!-- Form: Start -->
+                <!-- Form Fields -->
                 <VhField label="Name">
-                    <div class="p-inputgroup">
-                        <InputText class="w-full" placeholder="Enter the name" name="orders-name"
-                            data-testid="orders-name" @update:modelValue="store.watchItem" v-model="store.item.name"
-                            required />
-                        <div class="required-field hidden"></div>
-                    </div>
+                    <InputText class="w-full" placeholder="Enter the name" name="orders-name"
+                        data-testid="orders-name" @update:modelValue="store.watchItem" v-model="store.item.name"
+                        required />
                 </VhField>
 
                 <VhField label="Customer">
                     <Dropdown v-model="store.item.customer_id" :options="store.assets.customers || []"
-                        optionLabel="name" optionValue="id" placeholder="Select Customer" class="w-full md:w-19rem"
-                        data-testid="orders-customer" />
+                        optionLabel="name" optionValue="id" placeholder="Select Customer" class="w-full" />
                 </VhField>
 
                 <VhField label="Slug">
-                    <div class="p-inputgroup">
-                        <InputText class="w-full" placeholder="Enter the slug" name="orders-slug"
-                            data-testid="orders-slug" v-model="store.item.slug" required />
-                        <div class="required-field hidden"></div>
-                    </div>
+                    <InputText class="w-full" placeholder="Enter the slug" name="orders-slug"
+                        data-testid="orders-slug" v-model="store.item.slug" required />
                 </VhField>
 
                 <VhField label="Products">
-                    <MultiSelect v-model="store.selectedProductIds" :options="store.assets.products || []" optionLabel="name"
-                        optionValue="id" filter placeholder="Select Products" :maxSelectedLabels="3"
+                    <MultiSelect v-model="store.selectedProductIds" :options="store.assets.products || []"
+                        optionLabel="name" optionValue="id" filter placeholder="Select Products" :maxSelectedLabels="3"
                         class="w-full md:w-80" />
+                </VhField>
 
-                    <!-- For each selected product -->
-                    <div v-for="productId in store.selectedProductIds" :key="productId"
-                        class="flex flex-col gap-3 py-3 items-center space-x-4">
-                        <div class="w-48 font-medium flex pt-1">
-                            {{store.assets.products.find(p => p.id === productId)?.name}}
-                        </div>
-
-                        <InputNumber v-model="store.quantities[productId]" :min="1" showButtons buttonLayout="horizontal"
-                            :inputStyle="{ width: '4rem', textAlign: 'center' }" />
-
-                        <div class="w-48 font-medium flex pt-1">
-                            ₹ {{ productTotals[productId]?.toLocaleString() || '0' }}
-                        </div>
+                <VhField>
+                    <!-- Product Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-100 text-left text-gray-700">
+                                <tr>
+                                    <th class="px-4 py-2">Product</th>
+                                    <th class="px-4 py-2">Quantity</th>
+                                    <th class="px-4 py-2">Price (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                <tr v-for="productId in store.selectedProductIds" :key="productId">
+                                    <td class="px-4 py-3 font-medium text-gray-800">
+                                        {{ store.assets.products.find(p => p.id === productId)?.name || '—' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <InputNumber
+                                            v-model="store.quantities[productId]"
+                                            :min="0"
+                                            showButtons
+                                            buttonLayout="horizontal"
+                                            class="w-24"
+                                            :inputStyle="{ textAlign: 'center' }"
+                                            @input="updateQuantity(productId, $event)"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3 text-green-600 font-semibold">
+                                        {{ productTotals[productId]?.toLocaleString() || '0' }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <!-- Grand Total -->
-                    <div class="w-full">
-                        <div class="font-bold text-lg mt-4 flex  w-1/3">
+                    <!-- Totals -->
+                    <div class="mt-4 flex flex-wrap justify-end gap-4 text-sm font-medium">
+                        <div class="text-blue-600">
                             Total: ₹ {{ grandTotal.toLocaleString() }}
                         </div>
-                        <div class="font-bold text-md mt-1 text-gray-600">
+                        <div class="text-green-600">
                             Quantity: {{ totalQuantity }}
                         </div>
                     </div>
                 </VhField>
-                <!-- Form: End -->
-
 
                 <VhField label="Status">
-                    <Dropdown v-model="store.item.status_id" :options="store.assets.status || []" optionLabel="name"
-                        optionValue="id" placeholder="Select a Status" class="w-full md:w-14rem" />
+                    <Dropdown v-model="store.item.status_id" :options="store.assets.status || []"
+                        optionLabel="name" optionValue="id" placeholder="Select a Status" class="w-full" />
                 </VhField>
-
 
                 <VhField label="Is Active">
                     <InputSwitch v-bind:false-value="0" v-bind:true-value="1" class="p-inputswitch-sm"
