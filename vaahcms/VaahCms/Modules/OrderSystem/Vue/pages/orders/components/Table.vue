@@ -94,7 +94,7 @@ const useVaah = vaah();
 
             </Column>
 
-                <Column field="updated_at" header="Updated"
+            <Column field="updated_at" header="Updated"
                         v-if="store.isViewLarge()"
                         style="width:150px;"
                         :sortable="true">
@@ -103,7 +103,7 @@ const useVaah = vaah();
                         {{prop.data.updated_at}}
                     </template>
 
-                </Column>
+            </Column>
 
             <Column field="is_active" v-if="store.isViewLarge()"
                     :sortable="true"

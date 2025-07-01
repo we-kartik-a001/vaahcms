@@ -7,7 +7,7 @@ import VhFieldVertical from './../../../vaahvue/vue-three/primeflex/VhFieldVerti
 
 const store = useorderStore()
 
-const price_range = ref([0, 3000])
+const price_range = ref([0, store.assets.max_price])
 
 watch(price_range, (range) => {
 
@@ -66,7 +66,7 @@ watch(price_range, (range) => {
 
                 <!-- Slider -->
                 <div class="p-3">
-                    <Slider v-model="price_range" range :min="0" :max="20000" :step="500" class="w-full " />
+                    <Slider v-model="price_range" range :min="0" :max="store.assets.max_price" :step="500" class="w-full " />
                 </div>
                 <!-- Price Range Display -->
                 <div class="w-full text-center text-sm text-gray-700 font-medium py-1 space-y-1">

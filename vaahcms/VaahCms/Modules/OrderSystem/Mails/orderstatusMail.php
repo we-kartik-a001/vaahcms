@@ -5,25 +5,27 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use VaahCms\Modules\OrderSystem\Models\order;
 
 class orderstatusMail extends Mailable {
 
     use Queueable, SerializesModels;
 
+      public $order;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(order $order)
     {
-        
+        $this->order = $order;
     }
     
    public function envelope():Envelope
     {
         return new Envelope(
-            subject: 'Order Status Updated - #' . ($this->order->id ?? ''),
+            subject: 'Order created - #' . ($this->order->id ?? ''),
         );
     }
 
@@ -32,9 +34,9 @@ class orderstatusMail extends Mailable {
      *
      * @return array
      */
-    public function build()
+   public function build()
     {
-        return $this->view('ordersystem::emails.orderstatus');
+        return $this->view('ordersystem::emails.orderstatus')
+                    ->with(['order' => $this->order]);
     }
-
 }

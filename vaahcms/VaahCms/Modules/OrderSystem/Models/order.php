@@ -1,5 +1,6 @@
 <?php namespace VaahCms\Modules\OrderSystem\Models;
 
+use App\Jobs\OrderSendMail;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -355,56 +356,87 @@ class order extends VaahModel
     //-------------------------------------------------
     public static function createItem($request)
     {
-       
         $inputs = $request->all();
 
+        // Step 1: Validate input
         $validation = self::validation($inputs);
         if (!$validation['success']) {
             return $validation;
         }
 
-
-        // check if name exist
+        // Step 2: Check if name exists
         $item = self::where('name', $inputs['name'])->withTrashed()->first();
-
         if ($item) {
-            $error_message = "This name is already exist".($item->deleted_at?' in trash.':'.');
-            $response['success'] = false;
-            $response['errors'][] = $error_message;
-            return $response;
+            return [
+                'success' => false,
+                'errors' => ["This name is already exist" . ($item->deleted_at ? ' in trash.' : '.')],
+            ];
         }
 
-        // check if slug exist
+        // Step 3: Check if slug exists
         $item = self::where('slug', $inputs['slug'])->withTrashed()->first();
-
         if ($item) {
-            $error_message = "This slug is already exist".($item->deleted_at?' in trash.':'.');
-            $response['success'] = false;
-            $response['errors'][] = $error_message;
-            return $response;
+            return [
+                'success' => false,
+                'errors' => ["This slug is already exist" . ($item->deleted_at ? ' in trash.' : '.')],
+            ];
         }
 
+        // Step 4: Separate product data
         $products = isset($inputs['products']) ? $inputs['products'] : [];
         unset($inputs['products']);
+
+        // Step 5: Validate stock BEFORE saving order
+        foreach ($products as $prod) {
+            $product = Product::find($prod['id']);
+            $orderedQty = $prod['quantity'];
+
+            if (!$product) {
+                return [
+                    'success' => false,
+                    'errors' => ["Product ID {$prod['id']} not found."],
+                ];
+            }
+
+            if ($product->stock < $orderedQty) {
+                return [
+                    'success' => false,
+                    'errors' => ["Not enough stock for '{$product->name}'. Available: {$product->stock}, Requested: {$orderedQty}"],
+                ];
+            }
+        }
+
+        // Step 6: Now safely create order
         $item = new self();
         $item->fill($inputs);
-
         $item->save();
 
-        self::orderMail($item);
+       if ($item->customer && $item->customer->email) {
+                VaahMail::dispatch(new orderstatusMail($item), [
+            'email' => $item->customer->email,
+            'name' => $item->customer->name
+        ]);
+        }
 
-        
-        // Only attach id and quantity (not price)
-        $pivotData = collect($products)->mapWithKeys(function($prod) {
+
+        // Step 8: Deduct stock and attach pivot
+        foreach ($products as $prod) {
+            $product = Product::find($prod['id']);
+            $product->stock -= $prod['quantity'];
+            $product->save();
+        }
+
+        $pivotData = collect($products)->mapWithKeys(function ($prod) {
             return [$prod['id'] => ['quantity' => $prod['quantity']]];
         })->toArray();
 
         $item->products()->attach($pivotData);
 
+        // Step 9: Return response
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");
-        return $response;
 
+        return $response;
     }
 
     public function scopeFilterByPrice($query, $filter)
@@ -689,6 +721,9 @@ class order extends VaahModel
                     ->each->restore();
                 break;
             case 'delete-all':
+                 $list->each(function ($order) {
+                    $order->products()->detach();
+                });
                 $list->forceDelete();
                 break;
             case 'create-100-records':
@@ -724,7 +759,7 @@ class order extends VaahModel
     {
 
         $item = self::where('id', $id)
-            ->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer',   'products' => function($q) {
+            ->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer','status', 'products' => function($q) {
                 $q->select('products.id', 'products.name', 'products.price');
             }])
             ->withTrashed()
@@ -738,13 +773,13 @@ class order extends VaahModel
         }
 
         
-         // ✅ Add pivot quantity to each product object for Vue use
-    if ($item->products) {
-        $item->products->transform(function ($product) {
-            $product->quantity = $product->pivot->quantity ?? 0;
-            return $product;
-        });
-    }
+         // Add pivot quantity to each product object for Vue use
+        if ($item->products) {
+            $item->products->transform(function ($product) {
+                $product->quantity = $product->pivot->quantity ?? 0;
+                return $product;
+            });
+        }
 
         $response['success'] = true;
         $response['data'] = $item;
@@ -753,12 +788,10 @@ class order extends VaahModel
 
     }
     //-------------------------------------------------
-    
+
     public static function updateItem($request, $id)
     {
-        // dd($request);
         $inputs = $request->all();
-
 
         $validation = self::validation($inputs);
         if (!$validation['success']) {
@@ -772,9 +805,10 @@ class order extends VaahModel
 
         if ($item) {
             $error_message = "This name is already exist" . ($item->deleted_at ? ' in trash.' : '.');
-            $response['success'] = false;
-            $response['errors'][] = $error_message;
-            return $response;
+            return [
+                'success' => false,
+                'errors' => [$error_message],
+            ];
         }
 
         // Check if slug exists
@@ -784,25 +818,70 @@ class order extends VaahModel
 
         if ($item) {
             $error_message = "This slug is already exist" . ($item->deleted_at ? ' in trash.' : '.');
-            $response['success'] = false;
-            $response['errors'][] = $error_message;
-            return $response;
+            return [
+                'success' => false,
+                'errors' => [$error_message],
+            ];
         }
 
-        // Store original before update
-        $item = self::where('id', $id)->with(['status', 'customer'])->withTrashed()->first();
+        // Load existing order
+        $item = self::where('id', $id)
+            ->with(['status', 'customer', 'products'])
+            ->withTrashed()
+            ->first();
+
         $original = $item->getOriginal();
 
         // Capture product input before unset
         $products = isset($inputs['products']) ? $inputs['products'] : [];
         unset($inputs['products']);
 
-        // Detect changed fields
+        // === STEP 1: Validate Stock Availability Before Making Any Changes ===
+        foreach ($products as $prod) {
+            $product = Product::find($prod['id']);
+            $requestedQty = $prod['quantity'];
+
+            if (!$product) {
+                return [
+                    'success' => false,
+                    'errors' => ["Product ID {$prod['id']} not found."],
+                ];
+            }
+
+            $existingPivot = $item->products->firstWhere('id', $prod['id']);
+            $restoredStock = $product->stock + ($existingPivot?->pivot->quantity ?? 0);
+
+            if ($restoredStock < $requestedQty) {
+                return [
+                    'success' => false,
+                    'errors' => [
+                        "Not enough stock for '{$product->name}'. Available after restore: {$restoredStock}, Requested: {$requestedQty}"
+                    ],
+                ];
+            }
+        }
+
+        // === STEP 2: Restore Old Stock ===
+        foreach ($item->products as $oldProduct) {
+            $product = Product::find($oldProduct->id);
+            if ($product) {
+                $product->stock += $oldProduct->pivot->quantity;
+                $product->save();
+            }
+        }
+
+        // === STEP 3: Deduct New Stock ===
+        foreach ($products as $prod) {
+            $product = Product::find($prod['id']);
+            $product->stock -= $prod['quantity'];
+            $product->save();
+        }
+
+        // === STEP 4: Detect Changes in Non-Product Fields ===
         $changes = [];
         foreach ($inputs as $key => $newValue) {
             $oldValue = $original[$key] ?? null;
 
-            // Normalize numeric string comparison
             if (is_numeric($oldValue) && is_numeric($newValue)) {
                 $oldValue = (string)$oldValue;
                 $newValue = (string)$newValue;
@@ -816,24 +895,26 @@ class order extends VaahModel
             }
         }
 
-        // Update the item
+        // === STEP 5: Update Order Fields ===
         $item->fill($inputs);
         $item->save();
 
-        // Update products
+        // === STEP 6: Sync Products with New Quantities ===
         $pivotData = collect($products)->mapWithKeys(function ($prod) {
             return [$prod['id'] => ['quantity' => $prod['quantity']]];
         })->toArray();
+
         $item->products()->sync($pivotData);
 
-       
+        // === STEP 7: Notify if Changes Occurred ===
         if (!empty($changes)) {
             self::sendOrderUpdateMail($item, $changes);
         }
 
-        // Return updated item
+        // === STEP 8: Return Updated Item ===
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");
+
         return $response;
     }
 
@@ -936,24 +1017,51 @@ class order extends VaahModel
 
     //-------------------------------------------------
     //-------------------------------------------------
-    public static function seedSampleItems($records=100)
-    {
 
+    public static function seedSampleItems($records = 100)
+    {
         $i = 0;
 
-        while($i < $records)
-        {
+        while ($i < $records) {
             $inputs = self::fillItem(false);
 
-            $item =  new self();
+            // Skip if no valid product data found
+            if (empty($inputs['products'])) {
+                continue;
+            }
+
+            // Create the order
+            $item = new self();
             $item->fill($inputs);
             $item->save();
 
-            $i++;
+            $pivotData = [];
+            foreach ($inputs['products'] as $prod) {
+                $product = Product::find($prod['id']);
+                $orderedQty = $prod['quantity'];
 
+                if (!$product || $product->stock < $orderedQty) {
+                    continue; // skip if product not valid or not enough stock
+                }
+
+                // Deduct stock
+                $product->stock -= $orderedQty;
+                $product->save();
+
+                $pivotData[$prod['id']] = ['quantity' => $orderedQty];
+            }
+
+            // Attach products with pivot data
+            if (!empty($pivotData)) {
+                $item->products()->attach($pivotData);
+                $i++;
+            } else {
+                // If no products were attached (e.g., due to low stock), delete the order
+                $item->delete();
+            }
         }
-
     }
+
 
     public static function getOrderStatuses()
     {

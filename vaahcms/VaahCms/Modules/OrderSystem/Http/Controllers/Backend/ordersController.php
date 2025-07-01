@@ -40,6 +40,7 @@ class ordersController extends Controller
             $data['status'] = Taxonomy::getTaxonomyByType($type);
             $data['customers'] = customer::all();
             $data['products'] = Product::all();
+            $data['max_price'] = Order::max('total_price');
 
             $data['actions'] = [];
 

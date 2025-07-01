@@ -132,9 +132,8 @@ const prepareOrderBeforeSave = (action) => {
 
                 <!-- Form Fields -->
                 <VhField label="Name">
-                    <InputText class="w-full" placeholder="Enter the name" name="orders-name"
-                        data-testid="orders-name" @update:modelValue="store.watchItem" v-model="store.item.name"
-                        required />
+                    <InputText class="w-full" placeholder="Enter the name" name="orders-name" data-testid="orders-name"
+                        @update:modelValue="store.watchItem" v-model="store.item.name" required />
                 </VhField>
 
                 <VhField label="Customer">
@@ -143,8 +142,8 @@ const prepareOrderBeforeSave = (action) => {
                 </VhField>
 
                 <VhField label="Slug">
-                    <InputText class="w-full" placeholder="Enter the slug" name="orders-slug"
-                        data-testid="orders-slug" v-model="store.item.slug" required />
+                    <InputText class="w-full" placeholder="Enter the slug" name="orders-slug" data-testid="orders-slug"
+                        v-model="store.item.slug" required />
                 </VhField>
 
                 <VhField label="Products">
@@ -159,12 +158,12 @@ const prepareOrderBeforeSave = (action) => {
                         <table class="w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-100 text-left text-gray-700">
                                 <tr>
-                                    <th class="px-4 py-2">Product</th>
-                                    <th class="px-4 py-2">Quantity</th>
-                                    <th class="px-4 py-2">Price (₹)</th>
+                                    <th class="px-1 py-2 text-xs">Product</th>
+                                    <th class="px-1 py-2 text-xs">Quantity</th>
+                                    <th class="px-1 py-2 text-xs">Price (₹)</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-100">
+                            <!-- <tbody class="bg-white divide-y divide-gray-100">
                                 <tr v-for="productId in store.selectedProductIds" :key="productId">
                                     <td class="px-4 py-3 font-medium text-gray-800">
                                         {{ store.assets.products.find(p => p.id === productId)?.name || '—' }}
@@ -184,6 +183,30 @@ const prepareOrderBeforeSave = (action) => {
                                         {{ productTotals[productId]?.toLocaleString() || '0' }}
                                     </td>
                                 </tr>
+                            </tbody> -->
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                <tr v-for="productId in store.selectedProductIds" :key="productId">
+                                    <td class="px-1 text-xs py-3 font-medium text-gray-800">
+                                        {{store.assets.products.find(p => p.id === productId)?.name || '—'}}
+                                    </td>
+
+                                    <td class=" py-3">
+                                        <InputNumber v-model="store.quantities[productId]" :min="0" showButtons
+                                            buttonLayout="horizontal"  :inputStyle="{ textAlign: 'center' }"
+                                            @input="updateQuantity(productId, $event)" />
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            Stock: {{store.assets.products.find(p => p.id === productId)?.stock ?? 0}}
+                                        </div>
+                                        <div v-if="store.quantities[productId] > (store.assets.products.find(p => p.id === productId)?.stock ?? 0)"
+                                            class="text-xs text-red-600 font-semibold mt-1">
+                                            ⚠ Not enough stock available
+                                        </div>
+                                    </td>
+
+                                    <td class="text-xs py-3 text-green-600 font-semibold ">
+                                         {{ productTotals[productId]?.toLocaleString() || '0' }}
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -200,8 +223,8 @@ const prepareOrderBeforeSave = (action) => {
                 </VhField>
 
                 <VhField label="Status">
-                    <Dropdown v-model="store.item.status_id" :options="store.assets.status || []"
-                        optionLabel="name" optionValue="id" placeholder="Select a Status" class="w-full" />
+                    <Dropdown v-model="store.item.status_id" :options="store.assets.status || []" optionLabel="name"
+                        optionValue="id" placeholder="Select a Status" class="w-full" />
                 </VhField>
 
                 <VhField label="Is Active">

@@ -122,7 +122,7 @@ const toggleItemMenu = (event) => {
                     <template v-for="(value, column) in store.item ">
 
                         <template v-if="column === 'created_by' || column === 'updated_by'
-                        || column === 'deleted_by' || column === 'customer_id' ||  column === 'products'">
+                        || column === 'deleted_by' || column === 'customer_id' || column === 'status'  ">
                         </template>
 
                         <template v-else-if="column === 'id' || column === 'uuid'">
@@ -138,6 +138,23 @@ const toggleItemMenu = (event) => {
                                        :can_copy="true"
                             />
                         </template>
+                        
+                        <template v-else-if="column === 'status_id'">
+                            <VhViewRow label="Status"
+                                       :value="store.item.status ? store.item.status.name : 'N/A'"
+                                       :can_copy="true"
+                            />
+                        </template>
+
+                       <template v-else-if="column === 'products'">
+                            <VhViewRow label="Products Name"
+                                    :value="store.item.products && store.item.products.length
+                                                ? store.item.products.map(p => p.name).join(', ')
+                                                : '—'"
+                                    :can_copy="true"
+                            />
+                        </template>
+
 
 
                         <template v-else-if="(column === 'created_by_user' || column === 'updated_by_user'
