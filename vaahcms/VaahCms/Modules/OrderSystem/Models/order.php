@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Faker\Factory;
 use VaahCms\Modules\OrderSystem\Mails\orderstatusMail;
+use VaahCms\Modules\OrderSystem\Mails\OrderupdateMail;
 use VaahCms\Modules\OrderSystem\Mails\TrashMail;
 use VaahCms\Modules\OrderSystem\Traits\TrashEmail;
 use WebReinvent\VaahCms\Libraries\VaahMail;
@@ -389,7 +390,7 @@ class order extends VaahModel
         // Step 5: Validate stock BEFORE saving order
         foreach ($products as $prod) {
             $product = Product::find($prod['id']);
-            $orderedQty = $prod['quantity'];
+            $ordered_qty = $prod['quantity'];
 
             if (!$product) {
                 return [
@@ -398,10 +399,10 @@ class order extends VaahModel
                 ];
             }
 
-            if ($product->stock < $orderedQty) {
+            if ($product->stock < $ordered_qty) {
                 return [
                     'success' => false,
-                    'errors' => ["Not enough stock for '{$product->name}'. Available: {$product->stock}, Requested: {$orderedQty}"],
+                    'errors' => ["Not enough stock for '{$product->name}'. Available: {$product->stock}, Requested: {$ordered_qty}"],
                 ];
             }
         }
@@ -411,11 +412,11 @@ class order extends VaahModel
         $item->fill($inputs);
         $item->save();
 
-       if ($item->customer && $item->customer->email) {
-                VaahMail::dispatch(new orderstatusMail($item), [
-            'email' => $item->customer->email,
-            'name' => $item->customer->name
-        ]);
+        $item->load('customer');
+
+        if ($item) {
+            
+            VaahMail::addInQueue(new orderstatusMail($item), $item->customer->email);
         }
 
 
@@ -426,11 +427,11 @@ class order extends VaahModel
             $product->save();
         }
 
-        $pivotData = collect($products)->mapWithKeys(function ($prod) {
+        $pivot_data = collect($products)->mapWithKeys(function ($prod) {
             return [$prod['id'] => ['quantity' => $prod['quantity']]];
         })->toArray();
 
-        $item->products()->attach($pivotData);
+        $item->products()->attach($pivot_data);
 
         // Step 9: Return response
         $response = self::getItem($item->id);
@@ -839,7 +840,7 @@ class order extends VaahModel
         // === STEP 1: Validate Stock Availability Before Making Any Changes ===
         foreach ($products as $prod) {
             $product = Product::find($prod['id']);
-            $requestedQty = $prod['quantity'];
+            $requested_qty = $prod['quantity'];
 
             if (!$product) {
                 return [
@@ -848,24 +849,24 @@ class order extends VaahModel
                 ];
             }
 
-            $existingPivot = $item->products->firstWhere('id', $prod['id']);
-            $restoredStock = $product->stock + ($existingPivot?->pivot->quantity ?? 0);
+            $existing_pivot = $item->products->firstWhere('id', $prod['id']);
+            $restored_stock = $product->stock + ($existing_pivot?->pivot->quantity ?? 0);
 
-            if ($restoredStock < $requestedQty) {
+            if ($restored_stock < $requested_qty) {
                 return [
                     'success' => false,
                     'errors' => [
-                        "Not enough stock for '{$product->name}'. Available after restore: {$restoredStock}, Requested: {$requestedQty}"
+                        "Not enough stock for '{$product->name}'. Available after restore: {$restored_stock}, Requested: {$requested_qty}"
                     ],
                 ];
             }
         }
 
         // === STEP 2: Restore Old Stock ===
-        foreach ($item->products as $oldProduct) {
-            $product = Product::find($oldProduct->id);
+        foreach ($item->products as $old_product) {
+            $product = Product::find($old_product->id);
             if ($product) {
-                $product->stock += $oldProduct->pivot->quantity;
+                $product->stock += $old_product->pivot->quantity;
                 $product->save();
             }
         }
@@ -879,18 +880,18 @@ class order extends VaahModel
 
         // === STEP 4: Detect Changes in Non-Product Fields ===
         $changes = [];
-        foreach ($inputs as $key => $newValue) {
-            $oldValue = $original[$key] ?? null;
+        foreach ($inputs as $key => $new_value) {
+            $old_value = $original[$key] ?? null;
 
-            if (is_numeric($oldValue) && is_numeric($newValue)) {
-                $oldValue = (string)$oldValue;
-                $newValue = (string)$newValue;
+            if (is_numeric($old_value) && is_numeric($new_value)) {
+                $old_value = (string)$old_value;
+                $new_value = (string)$new_value;
             }
 
-            if ($oldValue !== $newValue) {
+            if ($old_value !== $new_value) {
                 $changes[$key] = [
-                    'old' => $oldValue,
-                    'new' => $newValue
+                    'old' => $old_value,
+                    'new' => $new_value
                 ];
             }
         }
@@ -900,16 +901,20 @@ class order extends VaahModel
         $item->save();
 
         // === STEP 6: Sync Products with New Quantities ===
-        $pivotData = collect($products)->mapWithKeys(function ($prod) {
+        $pivot_data = collect($products)->mapWithKeys(function ($prod) {
             return [$prod['id'] => ['quantity' => $prod['quantity']]];
         })->toArray();
 
-        $item->products()->sync($pivotData);
+        $item->products()->sync($pivot_data);
 
         // === STEP 7: Notify if Changes Occurred ===
-        if (!empty($changes)) {
-            self::sendOrderUpdateMail($item, $changes);
+       if (!empty($changes)) {
+            VaahMail::addInQueue(
+                new OrderupdateMail($item, $changes),
+                $item->customer->email
+            );
         }
+
 
         // === STEP 8: Return Updated Item ===
         $response = self::getItem($item->id);
@@ -1035,25 +1040,25 @@ class order extends VaahModel
             $item->fill($inputs);
             $item->save();
 
-            $pivotData = [];
+            $pivot_data = [];
             foreach ($inputs['products'] as $prod) {
                 $product = Product::find($prod['id']);
-                $orderedQty = $prod['quantity'];
+                $ordered_qty = $prod['quantity'];
 
-                if (!$product || $product->stock < $orderedQty) {
+                if (!$product || $product->stock < $ordered_qty) {
                     continue; // skip if product not valid or not enough stock
                 }
 
                 // Deduct stock
-                $product->stock -= $orderedQty;
+                $product->stock -= $ordered_qty;
                 $product->save();
 
-                $pivotData[$prod['id']] = ['quantity' => $orderedQty];
+                $pivot_data[$prod['id']] = ['quantity' => $ordered_qty];
             }
 
             // Attach products with pivot data
-            if (!empty($pivotData)) {
-                $item->products()->attach($pivotData);
+            if (!empty($pivot_data)) {
+                $item->products()->attach($pivot_data);
                 $i++;
             } else {
                 // If no products were attached (e.g., due to low stock), delete the order

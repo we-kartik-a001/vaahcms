@@ -1,28 +1,32 @@
-<?php  namespace VaahCms\Modules\OrderSystem\Mails;
+<?php
+
+namespace VaahCms\Modules\OrderSystem\Mails;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use VaahCms\Modules\OrderSystem\Models\order;
+use VaahCms\Modules\OrderSystem\Models\Order;
 
-class orderstatusMail extends Mailable {
-
+class OrderStatusMail extends Mailable implements ShouldQueue
+{
     use Queueable, SerializesModels;
 
-      public $order;
+    public $order;
+
     /**
-     * Create a new event instance.
-     *
-     * @return void
+     * Create a new mail instance.
      */
-    public function __construct(order $order)
+    public function __construct(Order $order)
     {
         $this->order = $order;
     }
-    
-   public function envelope():Envelope
+
+    /**
+     * Define the email envelope (subject etc.).
+     */
+    public function envelope(): Envelope
     {
         return new Envelope(
             subject: 'Order created - #' . ($this->order->id ?? ''),
@@ -30,11 +34,9 @@ class orderstatusMail extends Mailable {
     }
 
     /**
-     * Get the channels the event should be broadcast on.
-     *
-     * @return array
+     * Build the message.
      */
-   public function build()
+    public function build()
     {
         return $this->view('ordersystem::emails.orderstatus')
                     ->with(['order' => $this->order]);

@@ -15,16 +15,16 @@
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding-bottom:1rem;">Hi {{ $item->customer->name ?? 'Customer' }},</td>
+                        <td style="padding-bottom:1rem;">Hi {{ $order->customer->name ?? 'Customer' }},</td>
                     </tr>
                     <tr>
                         <td style="padding-bottom:1rem;">Your order has been successfully placed. Below are your order details:</td>
                     </tr>
-                    <tr><td><strong>Order Slug:</strong> {{ $item->slug }}</td></tr>
-                    <tr><td><strong>Total Quantity:</strong> {{ $item->total_quantity }}</td></tr>
-                    <tr><td><strong>Total Price:</strong> ₹{{ number_format($item->total_price, 2) }}</td></tr>
-                    <tr><td><strong>Status:</strong> {{ $item->status->name ?? 'Unknown' }}</td></tr>
-                    <tr><td><strong>Active:</strong> {{ $item->is_active ? 'Yes' : 'No' }}</td></tr>
+                    <tr><td><strong>Order Slug:</strong> {{ $order->slug }}</td></tr>
+                    <tr><td><strong>Total Quantity:</strong> {{ $order->total_quantity }}</td></tr>
+                    <tr><td><strong>Total Price:</strong> ₹{{ number_format($order->total_price, 2) }}</td></tr>
+                    <tr><td><strong>Status:</strong> {{ $order->status->name ?? 'Unknown' }}</td></tr>
+                    <tr><td><strong>Active:</strong> {{ $order->is_active ? 'Yes' : 'No' }}</td></tr>
 
                     <tr>
                         <td style="padding-top:1.5rem;">
@@ -38,7 +38,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($item->products as $product)
+                                    @foreach($order->products as $product)
                                         <tr>
                                             <td style="padding:8px; border:1px solid #ddd;">{{ $product->name }}</td>
                                             <td style="padding:8px; border:1px solid #ddd;">{{ $product->pivot->quantity }}</td>
