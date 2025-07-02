@@ -22,8 +22,6 @@
 
     <div class="primevue">
         <div id="appOrderSystem">
-
-
         </div>
     </div>
 
