@@ -9,7 +9,7 @@ const route = useRoute();
 
 onMounted(async () => {
     store.getListSelectedMenu();
-    store.getListBulkMenu();
+    store.getListBulkMenu(); 
 });
 
 //--------selected_menu_state
@@ -18,6 +18,9 @@ const toggleSelectedMenuState = (event) => {
     selected_menu_state.value.toggle(event);
 };
 //--------/selected_menu_state
+watch(() => store.query.filter, () => {
+    store.countFilters(store.query);
+}, { deep: true });
 
 //--------bulk_menu_state
 const bulk_menu_state = ref();
@@ -61,6 +64,7 @@ const toggleBulkMenuState = (event) => {
                         store.show_filters = false;
                     ">
                     Advance Filter
+                    <Badge v-if="store.advance_count_filter > 0" :value="store.advance_count_filter"></Badge>
                 </Button>
 
                 <!--/selected_menu-->
@@ -73,8 +77,6 @@ const toggleBulkMenuState = (event) => {
 
 
                 <div class="grid p-fluid">
-
-
                     <div class="col-12">
                         <div class="p-inputgroup ">
 

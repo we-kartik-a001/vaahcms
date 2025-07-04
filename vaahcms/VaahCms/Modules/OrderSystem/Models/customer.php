@@ -640,6 +640,7 @@ class customer extends VaahModel
         $inputs['name'] = $faker->name;
         $inputs['email'] = $faker->unique()->safeEmail;
         $inputs['slug'] = Str::slug($inputs['name'] . '-' . uniqid());
+        $inputs['is_active'] = 1;
 
         if(!$is_response_return){
             return $inputs;

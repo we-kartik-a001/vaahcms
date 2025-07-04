@@ -38,8 +38,8 @@ class ordersController extends Controller
             $data['empty_item'] = order::getEmptyItem();
 
             $data['status'] = Taxonomy::getTaxonomyByType($type);
-            $data['customers'] = customer::all();
-            $data['products'] = Product::all();
+            $data['customers'] = customer::where('is_active',1)->get();
+            $data['products'] = Product::where('is_active',1)->get();
             $data['max_price'] = Order::max('total_price');
 
             $data['actions'] = [];

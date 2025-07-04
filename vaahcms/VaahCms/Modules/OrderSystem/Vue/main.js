@@ -16,6 +16,7 @@ import StyleClass from 'primevue/styleclass';
 import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
+import AutoComplete from 'primevue/autocomplete';
 
 //-------------/PrimeVue Imports
 
@@ -96,8 +97,8 @@ app.component('Dropdown', Dropdown);
 app.component('MultiSelect', MultiSelect);
 app.component('InputNumber', InputNumber);
 app.component('Slider', Slider);
+app.component('AutoComplete', AutoComplete);
 //-------------/CRUD PrimeVue Use
-
 
 app.mount('#appOrderSystem')
 

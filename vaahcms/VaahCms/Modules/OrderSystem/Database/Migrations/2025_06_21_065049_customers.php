@@ -21,6 +21,7 @@ class Customers extends Migration
 
                 $table->string('name')->nullable()->index();
                 $table->string('email')->nullable()->index();
+                $table->integer('total_orders')->nullable()->index();
                 $table->string('slug')->nullable()->index();
                 $table->boolean('is_active')->nullable()->index();
 

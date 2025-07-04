@@ -42,7 +42,7 @@ const useVaah = vaah();
 
             </Column>
 
-             <Column field="email" header="Email"
+            <Column field="email" header="Email"
                     class="overflow-wrap-anywhere"
                     :sortable="true">
 
@@ -54,8 +54,42 @@ const useVaah = vaah();
                 </template>
 
             </Column>
-           <!-- Form Field:End -->
+            
+            <!-- <Column field="total_orders" header="Total Orders"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
 
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"
+                           value="Trashed"
+                           severity="danger"></Badge>
+                    {{prop.data.total_orders}}
+                </template>
+
+            </Column> -->
+
+            <Column field="total_orders" header="Total Orders"
+                    class="overflow-wrap-anywhere"
+                    :sortable="true">
+
+                <template #body="prop">
+                    <Badge v-if="prop.data.deleted_at"
+                        value="Trashed"
+                        severity="danger" />
+
+                    <!-- Go to /orders with filter[customer_id] in query -->
+                    <a href="#" class="text-blue-600 underline hover:text-blue-800"
+                    @click.prevent="$router.push({
+                        name: 'orders.index',
+                        query: { 'filter[customer_id]': prop.data.id }
+                    })">
+                        {{ prop.data.total_orders }}
+                    </a>
+                </template>
+
+            </Column>
+
+           <!-- Form Field:End -->
 
                 <Column field="updated_at" header="Updated"
                         v-if="store.isViewLarge()"

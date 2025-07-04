@@ -61,6 +61,7 @@ export const useorderStore = defineStore({
         },
         is_list_loading: null,
         count_filters: 0,
+        advance_count_filter:0,
         list_selected_menu: [],
         list_bulk_menu: [],
         list_create_menu: [],
@@ -98,6 +99,7 @@ export const useorderStore = defineStore({
              */
             await this.updateQueryFromUrl(route);
         },
+      
         //---------------------------------------------------------------------
         setRowClass(data){
             return [{ 'bg-gray-200': data.id == this.route.params.id }];
@@ -120,24 +122,44 @@ export const useorderStore = defineStore({
             }
         },
         //---------------------------------------------------------------------
-        async updateQueryFromUrl(route)
+       async updateQueryFromUrl(route)
         {
-            if(route.query)
+            if(route.query && Object.keys(route.query).length > 0)
             {
-                if(Object.keys(route.query).length > 0)
+                for(let key in route.query)
                 {
-                    for(let key in route.query)
+                    let value = route.query[key];
+
+                    if(key === 'filter' && typeof value === 'object')
                     {
-                        this.query[key] = route.query[key]
+                        const normalized_filter = { ...value };
+
+                        const numericKeys = ['status_id', 'is_active', 'price_min', 'price_max'];
+
+                        for (let filterKey of numericKeys) {
+                            if (filterKey in normalized_filter) {
+                                let fieldValue = normalized_filter[filterKey];
+                                if (typeof fieldValue === 'string' && !isNaN(fieldValue)) {
+                                    normalized_filter[filterKey] = Number(fieldValue);
+                                }
+                            }
+                        }
+
+                        this.query.filter = normalized_filter;
+
                     }
-                    if(this.query.rows){
-                        this.query.rows = parseInt(this.query.rows);
+                    else if (key === 'rows' && !isNaN(value)) {
+                        this.query.rows = parseInt(value);
                     }
-                    this.countFilters(route.query);
+                    else {
+                        this.query[key] = value;
+                    }
                 }
+
+                this.countFilters(route.query);
             }
         },
-        //---------------------------------------------------------------------
+                //---------------------------------------------------------------------
         watchRoutes(route)
         {
             //watch routes
@@ -620,15 +642,33 @@ export const useorderStore = defineStore({
 
         },
         //---------------------------------------------------------------------
-        countFilters: function (query)
-        {
-            this.count_filters = 0;
-            if(query && query.filter)
-            {
-                let filter = vaah().cleanObject(query.filter);
-                this.count_filters = Object.keys(filter).length;
+        countFilters(query) {
+    this.count_filters = 0;
+    this.advance_count_filter = 0;
+
+    if (query && query.filter) {
+        let filter = vaah().cleanObject(query.filter);
+
+        // Define which filters are "advance"
+        const advancedFilterKeys = ['price_min', 'price_max', 'status_id'];
+        const excludeKeys = ['price_min']; // You can add keys here to exclude from all counts
+
+        for (let [key, value] of Object.entries(filter)) {
+            if (excludeKeys.includes(key)) continue;
+
+            const hasValue = value !== null && value !== undefined && value !== '' && value !== 'null';
+
+            if (!hasValue) continue;
+
+            if (advancedFilterKeys.includes(key)) {
+                this.advance_count_filter += 1;
+            } else {
+                this.count_filters += 1;
             }
-        },
+        }
+    }
+}
+,
         //---------------------------------------------------------------------
         async clearSearch()
         {

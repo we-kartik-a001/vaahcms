@@ -163,27 +163,6 @@ const prepareOrderBeforeSave = (action) => {
                                     <th class="px-1 py-2 text-xs">Price (₹)</th>
                                 </tr>
                             </thead>
-                            <!-- <tbody class="bg-white divide-y divide-gray-100">
-                                <tr v-for="productId in store.selectedProductIds" :key="productId">
-                                    <td class="px-4 py-3 font-medium text-gray-800">
-                                        {{ store.assets.products.find(p => p.id === productId)?.name || '—' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <InputNumber
-                                            v-model="store.quantities[productId]"
-                                            :min="0"
-                                            showButtons
-                                            buttonLayout="horizontal"
-                                            class="w-24"
-                                            :inputStyle="{ textAlign: 'center' }"
-                                            @input="updateQuantity(productId, $event)"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3 text-green-600 font-semibold">
-                                        {{ productTotals[productId]?.toLocaleString() || '0' }}
-                                    </td>
-                                </tr>
-                            </tbody> -->
                             <tbody class="bg-white divide-y divide-gray-100">
                                 <tr v-for="productId in store.selectedProductIds" :key="productId">
                                     <td class="px-1 text-xs py-3 font-medium text-gray-800">

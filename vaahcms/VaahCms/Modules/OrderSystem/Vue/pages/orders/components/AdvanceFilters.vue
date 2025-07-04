@@ -1,20 +1,24 @@
 <script setup>
+import { ref } from 'vue';
+import { useorderStore } from '../../../stores/store-orders';
+import VhFieldVertical from './../../../vaahvue/vue-three/primeflex/VhFieldVertical.vue';
 
-import { ref, watch } from 'vue';
-import { useorderStore } from '../../../stores/store-orders'
-import VhFieldVertical from './../../../vaahvue/vue-three/primeflex/VhFieldVertical.vue'
+const store = useorderStore();
 
+// Make sure max_price is a number
+const maxPrice = Number(store.assets.max_price) || 0;
 
-const store = useorderStore()
+// Price range state
+const price_range = ref([0, maxPrice]);
 
-const price_range = ref([0, store.assets.max_price])
+// Update filter values directly without watch
+store.query.filter.price_min = price_range.value[0];
+store.query.filter.price_max = price_range.value[1];
 
-watch(price_range, (range) => {
-
-    store.query.filter.price_min = range[0];
-    store.query.filter.price_max = range[1];
-})
-
+function onPriceChange() {
+    store.query.filter.price_min = price_range.value[0];
+    store.query.filter.price_max = price_range.value[1];
+}
 
 </script>
 
@@ -47,7 +51,6 @@ watch(price_range, (range) => {
 
             </template>
 
-
             <VhFieldVertical>
 
                 <p class="font-semibold">Filter Status</p>
@@ -55,7 +58,6 @@ watch(price_range, (range) => {
                     optionValue="id" placeholder="Select a Status" class="w-full" />
 
             </VhFieldVertical>
-
 
             <VhFieldVertical>
                 <p class="font-semibold">Price Range</p>
@@ -66,7 +68,8 @@ watch(price_range, (range) => {
 
                 <!-- Slider -->
                 <div class="p-3">
-                    <Slider v-model="price_range" range :min="0" :max="store.assets.max_price" :step="500" class="w-full " />
+                    <Slider v-model="price_range" range :min="0" :max="maxPrice" :step="500" class="w-full"
+                        @change="onPriceChange" />
                 </div>
                 <!-- Price Range Display -->
                 <div class="w-full text-center text-sm text-gray-700 font-medium py-1 space-y-1">
@@ -78,57 +81,6 @@ watch(price_range, (range) => {
                     </div>
                 </div>
             </VhFieldVertical>
-
-
-            <VhFieldVertical>
-                <template #label>
-                    <b>Is Active:</b>
-                </template>
-
-                <div class="field-radiobutton">
-                    <RadioButton name="active-all" inputId="active-all" value="null"
-                        data-testid="orders-filters-active-all" v-model="store.query.filter.is_active" />
-                    <label for="active-all" class="cursor-pointer">All</label>
-                </div>
-                <div class="field-radiobutton">
-                    <RadioButton name="active-true" inputId="active-true" data-testid="orders-filters-active-true"
-                        value="true" v-model="store.query.filter.is_active" />
-                    <label for="active-true" class="cursor-pointer">Only Active</label>
-                </div>
-                <div class="field-radiobutton">
-                    <RadioButton name="active-false" inputId="active-false" data-testid="orders-filters-active-false"
-                        value="false" v-model="store.query.filter.is_active" />
-                    <label for="active-false" class="cursor-pointer">Only Inactive</label>
-                </div>
-
-            </VhFieldVertical>
-
-            <Divider />
-
-            <VhFieldVertical>
-                <template #label>
-                    <b>Trashed:</b>
-                </template>
-
-                <div class="field-radiobutton">
-                    <RadioButton name="trashed-exclude" inputId="trashed-exclude"
-                        data-testid="orders-filters-trashed-exclude" value="" v-model="store.query.filter.trashed" />
-                    <label for="trashed-exclude" class="cursor-pointer">Exclude Trashed</label>
-                </div>
-                <div class="field-radiobutton">
-                    <RadioButton name="trashed-include" inputId="trashed-include"
-                        data-testid="orders-filters-trashed-include" value="include"
-                        v-model="store.query.filter.trashed" />
-                    <label for="trashed-include" class="cursor-pointer">Include Trashed</label>
-                </div>
-                <div class="field-radiobutton">
-                    <RadioButton name="trashed-only" inputId="trashed-only" data-testid="orders-filters-trashed-only"
-                        value="only" v-model="store.query.filter.trashed" />
-                    <label for="trashed-only" class="cursor-pointer">Only Trashed</label>
-                </div>
-
-            </VhFieldVertical>
-
 
         </Panel>
 

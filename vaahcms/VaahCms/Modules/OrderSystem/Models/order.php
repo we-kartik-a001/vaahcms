@@ -1,6 +1,7 @@
 <?php namespace VaahCms\Modules\OrderSystem\Models;
 
 use App\Jobs\OrderSendMail;
+use Customers;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -565,6 +566,7 @@ class order extends VaahModel
         }
 
     }
+    
     //-------------------------------------------------
     public static function getList($request)
     {
@@ -687,7 +689,7 @@ class order extends VaahModel
         return $response;
     }
     //-------------------------------------------------
-     public static function listAction($request, $type): array
+    public static function listAction($request, $type): array
     {
 
         $list = self::query();
@@ -1067,13 +1069,13 @@ class order extends VaahModel
         }
     }
 
+    //------------------------------------------------
 
     public static function getOrderStatuses()
     {
         $statuses = Taxonomy::getTaxonomyByType('order-status');
         return $statuses->pluck('id')->toArray();
     }
-
 
     //------------------------------------------------
    public static function fillItem($is_response_return = true)
@@ -1098,14 +1100,16 @@ class order extends VaahModel
         $inputs['is_active'] = 1;
 
         // Add random customer ID
-        $inputs['customer_id'] = Customer::inRandomOrder()->value('id');
+        $active_customer_count = rand(1, Customer::where('is_active', 1)->count());
+        $inputs['customer_id'] = Customer::where('is_active',1)->inRandomOrder()->take($active_customer_count)->value('id');
 
         // Add status_id from order_status taxonomy
         $status_ids = self::getOrderStatuses();
         $inputs['status_id'] = $faker->randomElement($status_ids);
 
         // Add random products with quantities, and include name and price
-        $products = Product::inRandomOrder()->take(rand(1, 3))->get();
+        $active_products_count = rand(1, Product::where('is_active', 1)->count());
+        $products = Product::where('is_active',1)->inRandomOrder()->take($active_products_count)->get();
         $pivot_products = [];
         $total_quantity = 0;
         $total_price = 0;
@@ -1136,6 +1140,14 @@ class order extends VaahModel
             return $response;
     }
 
+    protected static function booted()
+    {
+        static::created(function ($order) {
+            $customer = $order->customer;
+            $customer->total_orders = $customer->orders()->count();
+            $customer->save();
+        });
+    }
 
     //-------------------------------------------------
     //-------------------------------------------------
