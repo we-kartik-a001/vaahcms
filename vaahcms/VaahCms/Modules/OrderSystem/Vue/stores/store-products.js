@@ -8,6 +8,8 @@ let model_namespace = 'VaahCms\\Modules\\OrderSystem\\Models\\Product';
 
 let base_url = document.getElementsByTagName('base')[0].getAttribute("href");
 let ajax_url = base_url + "/ordersystem/products";
+let url = ajax_url + '/upload/image';
+
 
 let empty_states = {
     query: {
@@ -65,7 +67,11 @@ export const useProductStore = defineStore({
         list_create_menu: [],
         item_menu_list: [],
         item_menu_state: null,
-        form_menu_list: []
+        form_menu_list: [],
+        selectedImages: [],
+        uploadedImagePaths: [],
+        url:url,
+          upload_prescription:[],
     }),
     getters: {
 

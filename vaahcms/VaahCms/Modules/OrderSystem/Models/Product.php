@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Faker\Factory;
+use Illuminate\Support\Facades\Storage;
 use WebReinvent\VaahCms\Models\VaahModel;
 use WebReinvent\VaahCms\Traits\CrudWithUuidObservantTrait;
 use WebReinvent\VaahCms\Models\User;
@@ -58,6 +59,10 @@ class Product extends VaahModel
         return $this->belongsToMany(Order::class, 'order_product', 'product_id', 'order_id')
             ->withPivot('quantity')
             ->withTimestamps();
+    }
+
+    public function images(){
+        return $this->hasMany(ProductImage::class);
     }
 
     //-------------------------------------------------
@@ -157,7 +162,7 @@ class Product extends VaahModel
     //-------------------------------------------------
     public static function createItem($request)
     {
-
+       
         $inputs = $request->all();
 
         $validation = self::validation($inputs);
@@ -190,10 +195,21 @@ class Product extends VaahModel
         $item->fill($inputs);
         $item->save();
 
+        // ✅ Handle multiple images
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $imageFile) {
+                $path = $imageFile->store('product-images', 'public');
+
+                ProductImage::create([
+                    'product_id' => $item->id,
+                    'product_image' => $path,
+                ]);
+            }
+        }
+
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");
         return $response;
-
     }
 
     //-------------------------------------------------
@@ -660,6 +676,50 @@ class Product extends VaahModel
         $response['data']['fill'] = $inputs;
         return $response;
     }
+    //--------------------------------------------------
+   /* public static function imageUpload($request)
+    {
+        dd($request);
+        file
+         dd($request->hasFile('images'));
+        $paths = []; // ✅ Make sure it's initialized
+
+        if ($request->hasFile('images')) {
+           
+            foreach ($request->file('images') as $file) {
+                $path = $file->store('product-images', 'public');
+                $paths[] = Storage::url($path); // You can also use just $path if you want only relative path
+            }
+        }
+
+        return [
+            'success' => true,
+            'paths' => $paths,
+            'message' => 'Images uploaded successfully.'
+        ];
+    }*/
+    public static function imageUpload(Request $request)
+{
+    if ($request->hasFile('file')) {
+        $file = $request->file('file');
+
+        $path = $file->store('uploads', 'public'); // 🔁 Save to public/uploads
+        $url = Storage::url($path); // Generates /storage/uploads/xyz.jpg
+
+        return response()->json([
+            'success' => true,
+            'file_url' => $url,
+            'message' => 'File uploaded successfully.'
+        ]);
+    }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'No file found in the request.'
+    ]);
+}
+
+
 
     //-------------------------------------------------
     //-------------------------------------------------

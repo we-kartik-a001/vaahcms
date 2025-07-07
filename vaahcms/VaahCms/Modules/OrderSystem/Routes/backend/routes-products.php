@@ -72,5 +72,10 @@ function () {
         ->name('vh.backend.ordersystem.products.item.action');
 
     //---------------------------------------------------------
+    /**
+     * Image Uplaod
+     */
+    Route::post('/upload/image', [ProductsController::class, 'imageUpload'])
+        ->name('vh.backend.ordersystem.api.products.item.action');
 
 });

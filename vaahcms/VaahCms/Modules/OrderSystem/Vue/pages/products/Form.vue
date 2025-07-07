@@ -2,6 +2,8 @@
 import {onMounted, ref, watch} from "vue";
 import { useProductStore } from '../../stores/store-products'
 
+import fileupload from '../products/components/FileUploader.vue'
+
 import VhField from './../../vaahvue/vue-three/primeflex/VhField.vue'
 import {useRoute} from 'vue-router';
 
@@ -185,6 +187,26 @@ const toggleFormMenu = (event) => {
                         <div class="required-field hidden"></div>
                     </div>
                 </VhField>
+                
+               <!--<VhField label="Product Image">
+                    <FileUpload
+                        name="images"
+                        :multiple="true"
+                        accept="image/*"
+                        :maxFileSize="1000000"
+                        v-model:file="store.selectedImages"
+                    >
+                        <template #empty>
+                            <span>Drag and drop files here to upload.</span>
+                        </template>
+                    </FileUpload>
+                </VhField>-->
+                <fileupload
+                :upload-url="store.url"
+                :max-file-size="2000000"
+                :file-type-accept="'image/*'"
+                :can-select-multiple="true"
+                />
 
 
                 <VhField label="Slug">
@@ -198,14 +220,6 @@ const toggleFormMenu = (event) => {
                     </div>
                 </VhField>
 
-                <VhField label="Product Image">
-                <FileUpload name="images[]" url="/api/upload" @upload="onAdvancedUpload($event)" :multiple="true" accept="image/*" :maxFileSize="1000000">
-                    <template #empty>
-                        <span>Drag and drop files to here to upload.</span>
-                    </template>
-                </FileUpload>
-                </VhField>
-
                 <VhField label="Is Active">
                     <InputSwitch v-bind:false-value="0"
                                  v-bind:true-value="1"
@@ -214,7 +228,6 @@ const toggleFormMenu = (event) => {
                                  data-testid="products-active"
                                  v-model="store.item.is_active"/>
                 </VhField>
-
             </div>
         </Panel>
 
