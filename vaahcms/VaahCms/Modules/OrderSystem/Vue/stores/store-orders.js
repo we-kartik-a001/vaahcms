@@ -134,9 +134,14 @@ export const useorderStore = defineStore({
                     {
                         const normalized_filter = { ...value };
 
-                        const numericKeys = ['status_id', 'is_active', 'price_min', 'price_max'];
+                        const numericKeys = ['status_id', 'is_active',  'price_max'];
+                        const excludeKeys = ['price_min'];
 
-                        for (let filterKey of numericKeys) {
+                        for (let filterKey of numericKeys) {  
+                            if (excludeKeys.includes(filterKey)) {
+                                continue;
+                            }
+
                             if (filterKey in normalized_filter) {
                                 let fieldValue = normalized_filter[filterKey];
                                 if (typeof fieldValue === 'string' && !isNaN(fieldValue)) {
@@ -643,32 +648,31 @@ export const useorderStore = defineStore({
         },
         //---------------------------------------------------------------------
         countFilters(query) {
-    this.count_filters = 0;
-    this.advance_count_filter = 0;
+            this.count_filters = 0;
+            this.advance_count_filter = 0;
 
-    if (query && query.filter) {
-        let filter = vaah().cleanObject(query.filter);
+            if (query && query.filter) {
+                let filter = vaah().cleanObject(query.filter);
 
-        // Define which filters are "advance"
-        const advancedFilterKeys = ['price_min', 'price_max', 'status_id'];
-        const excludeKeys = ['price_min']; // You can add keys here to exclude from all counts
+                // Define which filters are "advance"
+                const advancedFilterKeys = ['price_min', 'price_max', 'status_id'];
+                const excludeKeys = ['price_min','customer_id']; // You can add keys here to exclude from all counts
 
-        for (let [key, value] of Object.entries(filter)) {
-            if (excludeKeys.includes(key)) continue;
+                for (let [key, value] of Object.entries(filter)) {
+                    if (excludeKeys.includes(key)) continue;
 
-            const hasValue = value !== null && value !== undefined && value !== '' && value !== 'null';
+                    const hasValue = value !== null && value !== undefined && value !== '' && value !== 'null';
 
-            if (!hasValue) continue;
+                    if (!hasValue) continue;
 
-            if (advancedFilterKeys.includes(key)) {
-                this.advance_count_filter += 1;
-            } else {
-                this.count_filters += 1;
+                    if (advancedFilterKeys.includes(key)) {
+                        this.advance_count_filter += 1;
+                    } else {
+                        this.count_filters += 1;
+                    }
+                }
             }
-        }
-    }
-}
-,
+        },
         //---------------------------------------------------------------------
         async clearSearch()
         {

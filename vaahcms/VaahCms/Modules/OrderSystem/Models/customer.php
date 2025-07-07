@@ -282,7 +282,10 @@ class customer extends VaahModel
         $list->isActiveFilter($request->filter);
         $list->trashedFilter($request->filter);
         $list->searchFilter($request->filter);
-
+        
+        if (!empty($request->filter['id'])) {
+            $list->where('id', $request->filter['id']);
+        }
         $rows = config('vaahcms.per_page');
 
         if($request->has('rows'))

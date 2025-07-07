@@ -575,6 +575,10 @@ class order extends VaahModel
         $list->trashedFilter($request->filter);
         $list->searchFilter($request->filter);
         $list->filterByStatus($request->filter);
+         // Filter by customer_id
+        if (isset($request->filter['customer_id'])) {
+            $list->where('customer_id', $request->filter['customer_id']);
+        }
         $list->filterByPrice($request->filter);
         $list->with(['createdByUser', 'updatedByUser', 'deletedByUser','customer','status']); 
 

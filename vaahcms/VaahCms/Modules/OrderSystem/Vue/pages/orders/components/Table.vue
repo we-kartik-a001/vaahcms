@@ -40,40 +40,32 @@ const useVaah = vaah();
                 </template>
 
             </Column>
-            
-
-             <!-- <Column field="customer_id" header="Customer"
-                    class="overflow-wrap-anywhere"
-                    :sortable="true">
-
-                <template #body="prop">
-                    <Badge v-if="prop.data.deleted_at"  
-                           value="Trashed"
-                           severity="danger"></Badge>
-                    {{prop.data.customer ? prop.data.customer.name : 'No Customer'}}
-                </template>
-
-            </Column> -->
 
             <Column field="customer_id" header="Customer"
-                    class="overflow-wrap-anywhere"
-                    :sortable="true">
+                class="overflow-wrap-anywhere text-center"
+                :sortable="true">
 
                 <template #body="prop">
                     <Badge v-if="prop.data.deleted_at"  
                         value="Trashed"
                         severity="danger"></Badge>
 
-                    <a v-if="prop.data.customer"
-                    href="#"
-                    @click.prevent="$router.push({ name: 'customers.index', params: { id: prop.data.customer.id } })"
-                    class="text-blue-600  hover:text-blue-800">
-                        {{ prop.data.customer.name }}
-                    </a>
-                    <span v-else>No Customer</span>
-                </template>
+                    <div class="bg-blue-500 hover:bg-blue-700  py-1">
+                        <a v-if="prop.data.customer"
+                        href="#"
+                        @click.prevent="$router.push({
+                            name: 'customers.index',
+                            query: { filter: {'id': prop.data.customer.id} }
+                        })"
+                        class="text-white">
+                            {{ prop.data.customer.name }}
+                        </a>
 
+                        <span v-else>No Customer</span>
+                    </div>
+                </template>
             </Column>
+
 
 
             <Column field="total_quantity" header="Quantity"

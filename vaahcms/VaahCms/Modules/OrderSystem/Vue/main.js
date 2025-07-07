@@ -38,6 +38,7 @@ import Dropdown from 'primevue/dropdown';
 import MultiSelect from 'primevue/multiselect';
 import InputNumber from 'primevue/inputnumber';
 import Slider from 'primevue/slider';
+import FileUpload from 'primevue/fileupload';
 
 
 
@@ -98,6 +99,8 @@ app.component('MultiSelect', MultiSelect);
 app.component('InputNumber', InputNumber);
 app.component('Slider', Slider);
 app.component('AutoComplete', AutoComplete);
+app.component('FileUpload', FileUpload);
+
 //-------------/CRUD PrimeVue Use
 
 app.mount('#appOrderSystem')

@@ -3,6 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
+use VaahCms\Modules\OrderSystem\Models\customer;
+use VaahCms\Modules\OrderSystem\Models\order;
+use VaahCms\Modules\OrderSystem\Models\Product;
 
 class ExtendController extends Controller
 {
@@ -58,5 +61,44 @@ class ExtendController extends Controller
         return vh_response($response);
     }
     //----------------------------------------------------------
+    
+
+   public function getDashboardItems()
+    {
+
+        $data = array();
+
+        $data['card'] = [
+            "title" => "Order System Details",
+            "list" => [
+
+                 [
+                    "count" => order::count(),
+                    "label" => 'Total Orders',
+                    "icon" => "pi pi-box",
+                    "type" => "success",
+                   
+                ],
+
+                [
+                    "count" => Product::count(),
+                    "label" => 'Total Products',
+                    "icon" => "pi-shopping-bag",
+                    "type" => "success",
+                ],
+                [
+                    "count" => customer::where('is_active',1)->count(),
+                    "label" => 'Active Cusomter',
+                    "icon" => "pi-user",
+                    "type" => "success",
+                ]
+            ],
+        ];
+
+        $response['success'] = true;
+        $response['data'] = $data;
+        return $response;
+    }
+
 
 }

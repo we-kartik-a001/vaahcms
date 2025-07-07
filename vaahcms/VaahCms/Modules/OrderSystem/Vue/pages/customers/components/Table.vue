@@ -54,40 +54,28 @@ const useVaah = vaah();
                 </template>
 
             </Column>
-            
-            <!-- <Column field="total_orders" header="Total Orders"
-                    class="overflow-wrap-anywhere"
-                    :sortable="true">
 
-                <template #body="prop">
-                    <Badge v-if="prop.data.deleted_at"
-                           value="Trashed"
-                           severity="danger"></Badge>
-                    {{prop.data.total_orders}}
-                </template>
+                <Column field="total_orders" header="Total Orders"
+                        class="overflow-wrap-anywhere text-center "
+                        :sortable="true">
 
-            </Column> -->
+                    <template #body="prop">
+                        <Badge v-if="prop.data.deleted_at"
+                            value="Trashed"
+                            severity="danger" />
 
-            <Column field="total_orders" header="Total Orders"
-                    class="overflow-wrap-anywhere"
-                    :sortable="true">
+                            <div class="bg-blue-400 hover:bg-blue-700 py-2 border-red"> 
+                                <a href="#" class="text-white  "
+                                @click.prevent="$router.push({
+                                    name: 'orders.index',
+                                    query: { filter : {customer_id: prop.data.id} }
+                                })">
+                                    {{ prop.data.total_orders }}
+                                </a>
+                            </div>
+                    </template>
 
-                <template #body="prop">
-                    <Badge v-if="prop.data.deleted_at"
-                        value="Trashed"
-                        severity="danger" />
-
-                    <!-- Go to /orders with filter[customer_id] in query -->
-                    <a href="#" class="text-blue-600 underline hover:text-blue-800"
-                    @click.prevent="$router.push({
-                        name: 'orders.index',
-                        query: { 'filter[customer_id]': prop.data.id }
-                    })">
-                        {{ prop.data.total_orders }}
-                    </a>
-                </template>
-
-            </Column>
+                </Column>
 
            <!-- Form Field:End -->
 

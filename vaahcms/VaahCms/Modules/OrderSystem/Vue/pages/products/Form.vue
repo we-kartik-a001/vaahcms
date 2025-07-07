@@ -198,6 +198,14 @@ const toggleFormMenu = (event) => {
                     </div>
                 </VhField>
 
+                <VhField label="Product Image">
+                <FileUpload name="images[]" url="/api/upload" @upload="onAdvancedUpload($event)" :multiple="true" accept="image/*" :maxFileSize="1000000">
+                    <template #empty>
+                        <span>Drag and drop files to here to upload.</span>
+                    </template>
+                </FileUpload>
+                </VhField>
+
                 <VhField label="Is Active">
                     <InputSwitch v-bind:false-value="0"
                                  v-bind:true-value="1"
