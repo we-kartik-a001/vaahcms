@@ -17,7 +17,7 @@ import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
 import Tooltip from 'primevue/tooltip';
 import AutoComplete from 'primevue/autocomplete';
-
+import Image from 'primevue/image';
 //-------------/PrimeVue Imports
 
 //-------------CRUD PrimeVue Imports
@@ -39,6 +39,7 @@ import MultiSelect from 'primevue/multiselect';
 import InputNumber from 'primevue/inputnumber';
 import Slider from 'primevue/slider';
 import FileUpload from 'primevue/fileupload';
+import Editor from 'primevue/editor';
 
 
 
@@ -100,7 +101,8 @@ app.component('InputNumber', InputNumber);
 app.component('Slider', Slider);
 app.component('AutoComplete', AutoComplete);
 app.component('FileUpload', FileUpload);
-
+app.component('Image', Image);
+app.component('Editor', Editor);
 //-------------/CRUD PrimeVue Use
 
 app.mount('#appOrderSystem')

@@ -9,6 +9,7 @@ let model_namespace = 'VaahCms\\Modules\\OrderSystem\\Models\\Product';
 let base_url = document.getElementsByTagName('base')[0].getAttribute("href");
 let ajax_url = base_url + "/ordersystem/products";
 let url = ajax_url + '/upload/image';
+let deleteurl = ajax_url + '/delete-image';
 
 
 let empty_states = {
@@ -69,9 +70,8 @@ export const useProductStore = defineStore({
         item_menu_state: null,
         form_menu_list: [],
         selectedImages: [],
-        uploadedImagePaths: [],
         url:url,
-          upload_prescription:[],
+        deleteurl:deleteurl,
     }),
     getters: {
 
@@ -380,9 +380,10 @@ export const useProductStore = defineStore({
                 case 'create-and-close':
                 case 'create-and-clone':
                     options.method = 'POST';
-                    options.params = item;
+                    options.params = {
+                            ...item,
+                        };
                     break;
-
                 /**
                  * Update a record with many columns, hence method is `PUT`
                  * https://docs.vaah.dev/guide/laravel.html#update-a-record-update-soft-delete-status-change-etc
@@ -391,7 +392,10 @@ export const useProductStore = defineStore({
                 case 'save-and-close':
                 case 'save-and-clone':
                     options.method = 'PUT';
-                    options.params = item;
+                    // options.params = item;
+                    options.params = {
+                          ...item,
+                      };
                     ajax_url += '/'+item.id
                     break;
                 /**

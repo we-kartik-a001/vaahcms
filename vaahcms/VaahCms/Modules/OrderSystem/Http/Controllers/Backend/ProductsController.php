@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Storage;
 use VaahCms\Modules\OrderSystem\Models\Product;
 
 
@@ -241,8 +242,23 @@ class ProductsController extends Controller
                 return $response;
             }
         }
-
     
+
+        public function deleteImage(Request $request)
+        {
+            $request->validate([
+                'path' => 'required|string',
+            ]);
+
+            $file_path = ltrim(str_replace('/storage/', '', $request->path), '/');
+            
+            if (Storage::disk('public')->exists($file_path)) {
+                Storage::disk('public')->delete($file_path);
+                return response()->json(['success' => true, 'message' => 'Image deleted from storage.']);
+            }
+
+            return response()->json(['success' => false, 'message' => 'Image not found in storage.'], 404);
+        }
 
 
 }

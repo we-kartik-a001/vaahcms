@@ -4,6 +4,7 @@ import { useProductStore } from '../../../stores/store-products'
 
 const store = useProductStore();
 const useVaah = vaah();
+const baseUrl = window.location.origin + '/vaahcms/vaahcms/public';
 
 </script>
 
@@ -41,18 +42,15 @@ const useVaah = vaah();
 
             </Column>
 
-             <Column field="description" header="Description"
-                    class="overflow-wrap-anywhere"
-                    :sortable="true">
-
+             <Column field="description" header="Description" class="overflow-wrap-anywhere" :sortable="true">
                 <template #body="prop">
-                    <Badge v-if="prop.data.deleted_at"
-                           value="Trashed"
-                           severity="danger"></Badge>
-                    {{prop.data.description}}
+                    <div>
+                        <Badge v-if="prop.data.deleted_at" value="Trashed" severity="danger" class="mb-1" />
+                        <div v-html="prop.data.description"></div>
+                    </div>
                 </template>
-
             </Column>
+
     
              <Column field="stock" header="Stock"
                     class="overflow-wrap-anywhere"
@@ -78,6 +76,19 @@ const useVaah = vaah();
                     {{prop.data.price}}
                 </template>
 
+            </Column>
+
+            <Column field="images" header="Images">
+                <template #body="prop">
+                    <div class="flex flex-wrap gap-2">
+                         <img
+                            v-for="(img, index) in prop.data.images"
+                            :key="index"
+                            :src="baseUrl + img.product_image"
+                            class="w-3 h-3 object-cover rounded"
+                          />
+                    </div>
+                </template>
             </Column>
 
             <Column field="updated_at" header="Updated"

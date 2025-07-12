@@ -76,6 +76,9 @@ function () {
      * Image Uplaod
      */
     Route::post('/upload/image', [ProductsController::class, 'imageUpload'])
-        ->name('vh.backend.ordersystem.api.products.item.action');
+        ->name('vh.backend.ordersystem.products.item.action');
+
+    Route::patch('/delete-image', [ProductsController::class, 'deleteImage'])
+        ->name('vh.backend.ordersystem.products.item.action');
 
 });

@@ -195,14 +195,11 @@ class Product extends VaahModel
         $item->fill($inputs);
         $item->save();
 
-        // ✅ Handle multiple images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $imageFile) {
-                $path = $imageFile->store('product-images', 'public');
-
+        if ($request->has('images') && is_array($request->images)) {
+            foreach ($request->images as $imagePath) {
                 ProductImage::create([
                     'product_id' => $item->id,
-                    'product_image' => $path,
+                    'product_image' => $imagePath,
                 ]);
             }
         }
@@ -298,7 +295,7 @@ class Product extends VaahModel
     //-------------------------------------------------
     public static function getList($request)
     {
-        $list = self::getSorted($request->filter);
+        $list = self::with('images')->getSorted($request->filter);
         $list->isActiveFilter($request->filter);
         $list->trashedFilter($request->filter);
         $list->searchFilter($request->filter);
@@ -309,7 +306,6 @@ class Product extends VaahModel
         {
             $rows = $request->rows;
         }
-
         $list = $list->paginate($rows);
 
         $response['success'] = true;
@@ -443,9 +439,29 @@ class Product extends VaahModel
                 $list->onlyTrashed()->get()
                     ->each->restore();
                 break;
-            case 'delete-all':
-                $list->forceDelete();
-                break;
+          case 'delete-all':
+        // ✅ Eager load images relation
+        $products = $list->with('images')->get();
+
+        foreach ($products as $product) {
+            // 1. Delete related image records from DB
+            foreach ($product->images as $image) {
+                // Optional: Delete image file from storage
+                $file_path = ltrim(str_replace('/storage/', '', $image->product_image), '/');
+
+                if (Storage::disk('public')->exists($file_path)) {
+                    Storage::disk('public')->delete($file_path);
+                }
+
+                $image->forceDelete(); 
+            }
+
+            // 2. Delete product
+            $product->forceDelete();
+        }
+
+        break;
+
             case 'create-100-records':
             case 'create-1000-records':
             case 'create-5000-records':
@@ -479,7 +495,7 @@ class Product extends VaahModel
     {
 
         $item = self::where('id', $id)
-            ->with(['createdByUser', 'updatedByUser', 'deletedByUser'])
+            ->with(['createdByUser', 'updatedByUser', 'deletedByUser','images'])
             ->withTrashed()
             ->first();
 
@@ -533,6 +549,29 @@ class Product extends VaahModel
         $item->fill($inputs);
         $item->save();
 
+        if (isset($inputs['images']) && is_array($inputs['images'])) {
+        foreach ($item->images as $image){  
+            $file_path = ltrim(str_replace('/storage/', '', $image->product_image), '/');
+            if (Storage::disk('public')->exists($file_path)) {
+                Storage::disk('public')->delete($file_path);
+            }
+            $image->forcedelete();
+        }
+
+         foreach ($inputs['images'] as $img) {
+            // Handle both string and array formats
+            $image_path = is_array($img) ? ($img['product_image'] ?? null) : $img;
+
+            if ($image_path) {
+                $item->images()->create([
+                    'product_id'     => $item->id,
+                    'product_image'  => $image_path,
+                    'uuid'           => Str::uuid(),
+                ]);
+            }
+        }
+    }
+
         $response = self::getItem($item->id);
         $response['messages'][] = trans("vaahcms-general.saved_successfully");
         return $response;
@@ -546,6 +585,20 @@ class Product extends VaahModel
             $response['success'] = false;
             $response['errors'][] = trans("vaahcms-general.record_does_not_exist");
             return $response;
+        }
+
+        $images = ProductImage::where('product_id', $item->id)->get();
+
+        foreach ($images as $image) {
+            $file_path = ltrim(str_replace('/storage/', '', $image->product_image), '/');
+
+            // Delete file if it exists
+            if (Storage::disk('public')->exists($file_path)) {
+                Storage::disk('public')->delete($file_path);
+            }
+
+            // Delete image DB record
+            $image->forceDelete();
         }
         $item->forceDelete();
 
@@ -677,50 +730,33 @@ class Product extends VaahModel
         return $response;
     }
     //--------------------------------------------------
-   /* public static function imageUpload($request)
+    public static function imageUpload(Request $request)
     {
-        dd($request);
-        file
-         dd($request->hasFile('images'));
-        $paths = []; // ✅ Make sure it's initialized
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
 
-        if ($request->hasFile('images')) {
-           
-            foreach ($request->file('images') as $file) {
-                $path = $file->store('product-images', 'public');
-                $paths[] = Storage::url($path); // You can also use just $path if you want only relative path
-            }
+            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $extension = $file->getClientOriginalExtension();
+
+            // Format: originalname_2025-07-08_14-22-55.ext
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $filename = Str::slug($originalName) . '_' . $timestamp . '.' . $extension;
+
+            $path = $file->storeAs('uploads', $filename, 'public');
+            $url = Storage::url($path); // Returns /storage/uploads/filename.ext
+
+            return response()->json([
+                'success' => true,
+                'file_url' => $url,
+                'message' => 'File uploaded successfully.'
+            ]);
         }
 
-        return [
-            'success' => true,
-            'paths' => $paths,
-            'message' => 'Images uploaded successfully.'
-        ];
-    }*/
-    public static function imageUpload(Request $request)
-{
-    if ($request->hasFile('file')) {
-        $file = $request->file('file');
-
-        $path = $file->store('uploads', 'public'); // 🔁 Save to public/uploads
-        $url = Storage::url($path); // Generates /storage/uploads/xyz.jpg
-
         return response()->json([
-            'success' => true,
-            'file_url' => $url,
-            'message' => 'File uploaded successfully.'
+            'success' => false,
+            'message' => 'No file found in the request.'
         ]);
     }
-
-    return response()->json([
-        'success' => false,
-        'message' => 'No file found in the request.'
-    ]);
-}
-
-
-
     //-------------------------------------------------
     //-------------------------------------------------
     //-------------------------------------------------

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import axios from 'axios';
-import { useProductStore } from '../../../stores/store-products'
+import { useProductStore } from '../../../stores/store-products';
 
 const store = useProductStore();
 
@@ -9,7 +9,7 @@ const props = defineProps({
     uploadUrl: { type: String, required: true },
     max_file_size: { type: Number, default: 4000000 },
     file_type_accept: { type: String, default: 'image/*,application/pdf' },
-    can_select_multiple: { type: Boolean, default: false } // 🔄 single file only
+    can_select_multiple: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(['child-event']);
@@ -23,50 +23,50 @@ function triggerFileDialog() {
 }
 
 function handleManualSelect(e) {
-    const file = e.target.files?.[0];
-    if (file) {
-        uploadFiles([file]);
+    const files = Array.from(e.target.files || []);
+    if (files.length) {
+        uploadFiles(files);
     }
 }
 
 function handleDrop(e) {
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-        uploadFiles([file]);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length) {
+        uploadFiles(files);
     }
 }
 
 async function uploadFiles(files) {
     uploadStatus.value = 'uploading';
     uploadedFileNames.value = [];
-    store.upload_prescription = []; // clear previous uploads for single file
+    store.selectedImages = []; // Clear previous uploads
 
-    const file = files[0];
-    const formData = new FormData();
-    formData.append('file', file);
+    for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
 
-    try {
-        const response = await axios.post(props.uploadUrl, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        try {
+            const response = await axios.post(props.uploadUrl, formData, {
+                headers: { 'Content-Type': 'multipart/form-data', }
+            });
 
-        if (response.data.success && response.data.file_url) {
-            store.upload_prescription.push(response.data.file_url);
-            emit('child-event', response.data.file_url);
-            uploadedFileNames.value.push(file.name);
-            uploadStatus.value = 'success';
-        } else {
+            if (response.data.success && response.data.file_url) {
+                store.selectedImages.push(response.data.file_url);
+                emit('child-event', response.data.file_url);
+                uploadedFileNames.value.push(file.name);
+            } else {
+                uploadStatus.value = 'error';
+                console.error('Upload failed:', response.data.message);
+            }
+        } catch (err) {
             uploadStatus.value = 'error';
-            console.error('Upload failed:', response.data.message);
+            console.error('Upload error:', err);
         }
-    } catch (err) {
-        uploadStatus.value = 'error';
-        console.error('Upload error:', err);
     }
 
-    // setTimeout(() => {
-    //     uploadStatus.value = '';
-    // }, 3000);
+    if (uploadedFileNames.value.length === files.length) {
+        uploadStatus.value = 'success';
+    }
 }
 
 const formatSize = (bytes) => {
@@ -85,22 +85,25 @@ const formatSize = (bytes) => {
         @drop.prevent="handleDrop"
         @dragover.prevent
     >
-        <p class="mb-1 font-semibold">Upload Prescription</p>
+        <p class="mb-1 font-semibold">Upload Images</p>
         <p class="text-xs text-gray-400">(Images or PDFs, max {{ formatSize(max_file_size) }})</p>
 
         <input
             type="file"
             ref="fileInput"
             :accept="file_type_accept"
-            :multiple="false"
-        class="hidden"
-        @change="handleManualSelect"
+            :multiple="can_select_multiple"
+            class="hidden"
+            @change="handleManualSelect"
         />
 
         <!-- Upload Feedback -->
         <div v-if="uploadStatus === 'uploading'" class="text-blue-500 mt-2">Uploading...</div>
         <div v-else-if="uploadStatus === 'success'" class="text-green-600 mt-2">
-            Uploaded: {{ uploadedFileNames[0] }}
+            Uploaded:
+            <ul>
+                <li v-for="(name, index) in uploadedFileNames" :key="index">{{ name }}</li>
+            </ul>
         </div>
         <div v-else-if="uploadStatus === 'error'" class="text-red-500 mt-2">Upload failed. Please try again.</div>
     </div>

@@ -65,6 +65,5 @@ function () {
     Route::any('/{id}/action/{action}', [ProductsController::class, 'itemAction'])
         ->name('vh.backend.ordersystem.api.products.item.action');
 
-
-
+   
 });

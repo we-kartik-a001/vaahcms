@@ -1,5 +1,7 @@
 <?php namespace VaahCms\Modules\OrderSystem\Models;
 
+use DateTimeInterface;
+
 use Illuminate\Database\Eloquent\SoftDeletes;
 use WebReinvent\VaahCms\Models\VaahModel;
 use WebReinvent\VaahCms\Models\User;
@@ -38,6 +40,7 @@ class ProductImage extends VaahModel {
         $date_time_format = config('settings.global.datetime_format');
         return $date->format($date_time_format);
     }
+
     //-------------------------------------------------
     public function product(){
         return $this->belongsTo(Product::class);
